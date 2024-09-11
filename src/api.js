@@ -32,4 +32,24 @@ async function generateResponse(prompt) {
   }
 }
 
-module.exports = { generateResponse };
+async function generateStreamResponse(prompt) {
+  console.log('Generating stream response for:', prompt);
+  console.log('Using model:', OPENAI_MODEL);
+
+  try {
+    const stream = await client.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      stream: true,
+    });
+
+    console.log('Received stream from OpenAI API');
+    return stream;
+  } catch (error) {
+    console.error('Error in generateStreamResponse function:', error);
+    throw new Error(`Failed to generate stream response: ${error.message}`);
+  }
+}
+
+module.exports = { generateResponse, generateStreamResponse };
