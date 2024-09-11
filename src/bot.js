@@ -26,33 +26,15 @@ bot.on('message', async (msg) => {
 
   if (msg.text && !msg.text.startsWith('/')) {
     try {
-      console.log('Generating response for:', msg.text);
       const response = await generateResponse(msg.text);
-      console.log('Generated response:', response);
       await bot.sendMessage(chatId, response);
       console.log('Response sent successfully');
     } catch (error) {
       console.error('Error in message handling:', error);
-      let errorMessage = 'Sorry, there was an error generating the response. Please try again later.';
-      if (error.message.includes('OpenAI')) {
-        errorMessage = `Error with OpenAI API: ${error.message}`;
-      }
-      bot.sendMessage(chatId, errorMessage)
+      bot.sendMessage(chatId, 'Sorry, there was an error generating the response. Please try again later.')
         .catch(sendError => console.error('Error sending error message:', sendError));
     }
   }
-});
-
-bot.on('polling_error', (error) => {
-  console.error('Polling error:', error);
-});
-
-bot.on('webhook_error', (error) => {
-  console.error('Webhook error:', error);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 module.exports = bot;
