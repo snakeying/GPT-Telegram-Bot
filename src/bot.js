@@ -31,17 +31,18 @@ async function handleMessage(msg) {
 
       for await (const partialResponse of generateResponseStream(msg.text)) {
         fullResponse += partialResponse;
-
         if (messageId) {
-          await bot.editMessageText(fullResponse, {
-            chat_id: chatId,
-            message_id: messageId,
-            parse_mode: 'Markdown'
-          }).catch(error => {
+          try {
+            await bot.editMessageText(fullResponse, {
+              chat_id: chatId,
+              message_id: messageId,
+              parse_mode: 'Markdown'
+            });
+          } catch (error) {
             if (error.response && error.response.body && error.response.body.description !== 'Bad Request: message is not modified') {
               console.error('Error editing message:', error);
             }
-          });
+          }
         } else {
           const sentMsg = await bot.sendMessage(chatId, fullResponse, { parse_mode: 'Markdown' });
           messageId = sentMsg.message_id;
