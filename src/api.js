@@ -11,29 +11,29 @@ async function generateResponse(prompt) {
   };
   console.log('Request body:', JSON.stringify(requestBody));
 
+  const headers = {
+    'Authorization': `Bearer ${OPENAI_API_KEY}`,
+    'Content-Type': 'application/json',
+  };
+  console.log('Request headers:', JSON.stringify(headers, null, 2));
+
   const requestOptions = {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
+    headers: headers,
     body: JSON.stringify(requestBody),
   };
 
   try {
     console.log('Sending request to OpenAI API...');
-    const fetchPromise = fetch(fullUrl, requestOptions);
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Request timed out')), 50000)
-    );
-
-    const response = await Promise.race([fetchPromise, timeoutPromise]);
+    const response = await fetch(fullUrl, requestOptions);
     console.log('Received response from OpenAI API');
     console.log('Response status:', response.status);
     console.log('Response headers:', JSON.stringify(Object.fromEntries(response.headers)));
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorBody = await response.text();
+      console.error('Error response body:', errorBody);
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
     }
 
     const data = await response.json();
