@@ -1,7 +1,7 @@
 {
   "name": "gpt-telegram-bot",
   "version": "1.0.0",
-  "description": "A Telegram bot that interacts with OpenAI's API",
+  "description": "Your own GPT Telegram bot on Vercel",
   "main": "api/telegram.js",
   "scripts": {
     "start": "node api/telegram.js",
