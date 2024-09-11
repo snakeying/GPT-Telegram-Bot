@@ -1,16 +1,16 @@
 {
   "name": "gpt-telegram-bot",
   "version": "1.0.0",
-  "description": "Your own GPT Telegram bot",
-  "main": "src/vercel.js",
+  "description": "A Telegram bot that interacts with OpenAI's API",
+  "main": "api/telegram.js",
   "scripts": {
-    "start": "node src/vercel.js",
-    "dev": "nodemon src/vercel.js"
+    "start": "node api/telegram.js",
+    "dev": "nodemon api/telegram.js"
   },
   "dependencies": {
-    "axios": "^0.21.1",
     "dotenv": "^10.0.0",
-    "node-telegram-bot-api": "^0.54.0"
+    "node-telegram-bot-api": "^0.54.0",
+    "openai": "^4.0.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.7"
