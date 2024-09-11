@@ -4,6 +4,31 @@ const { generateResponseStream } = require('./api');
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
+// Markdown 清理和验证函数
+function cleanMarkdown(text) {
+  // 确保代码块被正确闭合
+  let openCodeBlocks = (text.match(/```/g) || []).length;
+  if (openCodeBlocks % 2 !== 0) {
+    text += '\n```';
+  }
+
+  // 确保内联代码被正确闭合
+  let openInlineCode = (text.match(/`/g) || []).length;
+  if (openInlineCode % 2 !== 0) {
+    text += '`';
+  }
+
+  // 确保粗体和斜体标记被正确闭合
+  ['*', '_'].forEach(char => {
+    let count = (text.match(new RegExp('\\' + char, 'g')) || []).length;
+    if (count % 2 !== 0) {
+      text += char;
+    }
+  });
+
+  return text;
+}
+
 bot.onText(/\/start/, (msg) => {
   console.log('Received /start command');
   const chatId = msg.chat.id;
@@ -32,32 +57,36 @@ async function handleMessage(msg) {
       for await (const partialResponse of generateResponseStream(msg.text)) {
         fullResponse += partialResponse;
         
-        if (fullResponse.length > 4000) {
-          // If the message is too long, send it and start a new one
+        // 清理和验证 Markdown
+        const cleanedResponse = cleanMarkdown(fullResponse);
+        
+        if (cleanedResponse.length > 4000) {
+          // 如果消息太长，发送它并开始一个新的
           if (lastMessageId) {
-            await bot.editMessageText(fullResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
+            await bot.editMessageText(cleanedResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
           } else {
-            const sentMsg = await bot.sendMessage(chatId, fullResponse, { parse_mode: 'Markdown' });
+            const sentMsg = await bot.sendMessage(chatId, cleanedResponse, { parse_mode: 'Markdown' });
             lastMessageId = sentMsg.message_id;
           }
           fullResponse = '';
-        } else if (fullResponse.length % 20 === 0 || partialResponse.includes('\n')) {
-          // Update the message every 20 characters or when there's a newline
+        } else if (cleanedResponse.length % 20 === 0 || partialResponse.includes('\n')) {
+          // 每20个字符或有换行时更新消息
           if (lastMessageId) {
-            await bot.editMessageText(fullResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
+            await bot.editMessageText(cleanedResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
           } else {
-            const sentMsg = await bot.sendMessage(chatId, fullResponse, { parse_mode: 'Markdown' });
+            const sentMsg = await bot.sendMessage(chatId, cleanedResponse, { parse_mode: 'Markdown' });
             lastMessageId = sentMsg.message_id;
           }
         }
       }
 
-      // Send or update the final message
+      // 发送或更新最终消息
       if (fullResponse) {
+        const finalCleanedResponse = cleanMarkdown(fullResponse);
         if (lastMessageId) {
-          await bot.editMessageText(fullResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
+          await bot.editMessageText(finalCleanedResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
         } else {
-          await bot.sendMessage(chatId, fullResponse, { parse_mode: 'Markdown' });
+          await bot.sendMessage(chatId, finalCleanedResponse, { parse_mode: 'Markdown' });
         }
       }
 
