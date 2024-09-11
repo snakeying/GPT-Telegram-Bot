@@ -4,7 +4,6 @@ const { generateResponseStream } = require('./api');
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
-// Markdown 清理和验证函数
 function cleanMarkdown(text) {
   // 确保代码块被正确闭合
   let openCodeBlocks = (text.match(/```/g) || []).length;
@@ -53,38 +52,48 @@ async function handleMessage(msg) {
       console.log('Generating response for:', msg.text);
       let fullResponse = '';
       let lastMessageId = null;
+      let lastSentResponse = '';
 
       for await (const partialResponse of generateResponseStream(msg.text)) {
         fullResponse += partialResponse;
         
-        // 清理和验证 Markdown
         const cleanedResponse = cleanMarkdown(fullResponse);
         
-        if (cleanedResponse.length > 4000) {
-          // 如果消息太长，发送它并开始一个新的
-          if (lastMessageId) {
-            await bot.editMessageText(cleanedResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
-          } else {
-            const sentMsg = await bot.sendMessage(chatId, cleanedResponse, { parse_mode: 'Markdown' });
-            lastMessageId = sentMsg.message_id;
+        if (cleanedResponse.length > 4000 || cleanedResponse.length % 20 === 0 || partialResponse.includes('\n')) {
+          if (cleanedResponse !== lastSentResponse) {
+            if (lastMessageId) {
+              try {
+                await bot.editMessageText(cleanedResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
+              } catch (error) {
+                if (error.response && error.response.body && error.response.body.description !== 'Bad Request: message is not modified') {
+                  console.error('Error editing message:', error);
+                }
+              }
+            } else {
+              const sentMsg = await bot.sendMessage(chatId, cleanedResponse, { parse_mode: 'Markdown' });
+              lastMessageId = sentMsg.message_id;
+            }
+            lastSentResponse = cleanedResponse;
           }
-          fullResponse = '';
-        } else if (cleanedResponse.length % 20 === 0 || partialResponse.includes('\n')) {
-          // 每20个字符或有换行时更新消息
-          if (lastMessageId) {
-            await bot.editMessageText(cleanedResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
-          } else {
-            const sentMsg = await bot.sendMessage(chatId, cleanedResponse, { parse_mode: 'Markdown' });
-            lastMessageId = sentMsg.message_id;
+
+          if (cleanedResponse.length > 4000) {
+            fullResponse = '';
+            lastMessageId = null;
           }
         }
       }
 
       // 发送或更新最终消息
-      if (fullResponse) {
+      if (fullResponse && fullResponse !== lastSentResponse) {
         const finalCleanedResponse = cleanMarkdown(fullResponse);
         if (lastMessageId) {
-          await bot.editMessageText(finalCleanedResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
+          try {
+            await bot.editMessageText(finalCleanedResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
+          } catch (error) {
+            if (error.response && error.response.body && error.response.body.description !== 'Bad Request: message is not modified') {
+              console.error('Error editing final message:', error);
+            }
+          }
         } else {
           await bot.sendMessage(chatId, finalCleanedResponse, { parse_mode: 'Markdown' });
         }
