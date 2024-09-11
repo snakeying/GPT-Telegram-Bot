@@ -18,6 +18,7 @@ bot.on('message', async (msg) => {
 
   if (!WHITELISTED_USERS.includes(userId)) {
     console.log('User not whitelisted:', userId);
+    console.log('Whitelisted users:', WHITELISTED_USERS);
     bot.sendMessage(chatId, 'Sorry, you are not authorized to use this bot.')
       .catch(error => console.error('Error sending unauthorized message:', error));
     return;
@@ -32,19 +33,26 @@ bot.on('message', async (msg) => {
       console.log('Response sent successfully');
     } catch (error) {
       console.error('Error in message handling:', error);
-      bot.sendMessage(chatId, 'Sorry, there was an error generating the response. Please try again later.')
+      let errorMessage = 'Sorry, there was an error generating the response. Please try again later.';
+      if (error.message.includes('OpenAI')) {
+        errorMessage = `Error with OpenAI API: ${error.message}`;
+      }
+      bot.sendMessage(chatId, errorMessage)
         .catch(sendError => console.error('Error sending error message:', sendError));
     }
   }
 });
 
-// Add error handler
 bot.on('polling_error', (error) => {
   console.error('Polling error:', error);
 });
 
 bot.on('webhook_error', (error) => {
   console.error('Webhook error:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 module.exports = bot;
