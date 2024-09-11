@@ -7,6 +7,7 @@ const openaiApi = axios.create({
     'Authorization': `Bearer ${OPENAI_API_KEY}`,
     'Content-Type': 'application/json',
   },
+  timeout: 60000, // 设置 60 秒超时
 });
 
 async function generateResponse(prompt) {
@@ -23,29 +24,33 @@ async function generateResponse(prompt) {
     };
     console.log('Request body:', JSON.stringify(requestBody));
 
+    console.log('Sending request to OpenAI API...');
     const response = await openaiApi.post('/chat/completions', requestBody);
+    console.log('Received response from OpenAI API');
 
     console.log('OpenAI API response status:', response.status);
     console.log('OpenAI API response headers:', JSON.stringify(response.headers));
     console.log('OpenAI API response data:', JSON.stringify(response.data));
 
     if (response.data && response.data.choices && response.data.choices.length > 0) {
-      return response.data.choices[0].message.content.trim();
+      const generatedText = response.data.choices[0].message.content.trim();
+      console.log('Generated text:', generatedText);
+      return generatedText;
     } else {
       throw new Error('Unexpected API response structure');
     }
   } catch (error) {
-    console.error('Error calling OpenAI API:', error);
+    console.error('Error in generateResponse function:', error);
     if (error.response) {
       console.error('API response status:', error.response.status);
       console.error('API response headers:', JSON.stringify(error.response.headers));
       console.error('API response data:', JSON.stringify(error.response.data));
     } else if (error.request) {
-      console.error('No response received:', error.request);
+      console.error('No response received. Request details:', error.request);
     } else {
       console.error('Error setting up request:', error.message);
     }
-    throw new Error('Failed to generate response from OpenAI');
+    throw new Error(`Failed to generate response from OpenAI: ${error.message}`);
   }
 }
 
