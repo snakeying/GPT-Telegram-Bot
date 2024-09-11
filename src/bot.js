@@ -1,16 +1,9 @@
 const TelegramBot = require('node-telegram-bot-api');
-TelegramBot.Promise = Promise;
-
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS } = require('./config');
 const { generateResponse } = require('./api');
-const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
-const { Redis } = require('@upstash/redis');
+const { getConversationHistory, addToConversationHistory, clearConversationHistory, getUserModel, setUserModel } = require('./redis');
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-});
 
 async function handleStart(msg) {
   console.log('Handling /start command');
@@ -54,30 +47,19 @@ async function handleHistory(msg) {
 
 async function handleHelp(msg) {
   const chatId = msg.chat.id;
-  const helpMessage = "等待补充";
-  await bot.sendMessage(chatId, helpMessage, {parse_mode: 'Markdown'});
+  await bot.sendMessage(chatId, '等待补充', {parse_mode: 'Markdown'});
 }
 
-async function handleSwitchModel(msg, model) {
+async function handleSwitchModel(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  
-  if (!model) {
-    await bot.sendMessage(chatId, "请提供一个模型名称。使用方法：/switchmodel [model_name]", {parse_mode: 'Markdown'});
-    return;
-  }
+  const modelName = msg.text.split(' ')[1];
 
-  if (OPENAI_MODELS.length === 0) {
-    await bot.sendMessage(chatId, "没有可用的模型。请联系管理员设置 OPENAI_MODELS 环境变量。", {parse_mode: 'Markdown'});
-    return;
-  }
-
-  if (OPENAI_MODELS.includes(model)) {
-    await redis.set(`user:${userId}:model`, model);
-    console.log(`Model switched for user ${userId} to ${model}`);
-    await bot.sendMessage(chatId, `模型已切换到 ${model}`, {parse_mode: 'Markdown'});
+  if (OPENAI_MODELS.includes(modelName)) {
+    await setUserModel(userId, modelName);
+    await bot.sendMessage(chatId, `Model switched to ${modelName}`, {parse_mode: 'Markdown'});
   } else {
-    await bot.sendMessage(chatId, `无效的模型名称。请使用 /help 查看可用模型。`, {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, 'Invalid model name. Use /help to see available models.', {parse_mode: 'Markdown'});
   }
 }
 
@@ -101,26 +83,18 @@ async function handleMessage(msg) {
     } else if (msg.text === '/help') {
       await handleHelp(msg);
     } else if (msg.text.startsWith('/switchmodel')) {
-      const model = msg.text.split(' ')[1];
-      await handleSwitchModel(msg, model);
+      await handleSwitchModel(msg);
     } else if (msg.text && !msg.text.startsWith('/')) {
       console.log('Generating response for:', msg.text);
       
-      if (OPENAI_MODELS.length === 0) {
-        await bot.sendMessage(chatId, "没有可用的模型。请联系管理员设置 OPENAI_MODELS 环境变量。", {parse_mode: 'Markdown'});
-        return;
-      }
-
       // Send "typing" action
       await bot.sendChatAction(chatId, 'typing');
       
-      // Get conversation history
+      // Get conversation history and user's model
       const conversationHistory = await getConversationHistory(userId);
+      const userModel = await getUserModel(userId) || OPENAI_MODELS[0];
       console.log('Retrieved conversation history:', JSON.stringify(conversationHistory));
-      
-      // Get user's current model or use the first model in OPENAI_MODELS
-      const userModel = await redis.get(`user:${userId}:model`) || OPENAI_MODELS[0];
-      console.log(`Using model for user ${userId}: ${userModel}`);
+      console.log('Using model:', userModel);
       
       const response = await generateResponse(msg.text, conversationHistory, userModel);
       console.log('Generated response:', response);
