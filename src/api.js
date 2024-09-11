@@ -6,28 +6,25 @@ const client = new OpenAI({
   baseURL: OPENAI_BASE_URL
 });
 
-async function* generateResponseStream(prompt) {
+async function generateResponse(prompt) {
   console.log('Generating response for:', prompt);
   console.log('Using model:', OPENAI_MODEL);
 
   try {
-    const stream = await client.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: OPENAI_MODEL,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant. Format your responses using Markdown when appropriate.' },
+        { role: 'user', content: prompt }
+      ],
       temperature: 0.7,
-      stream: true,
     });
 
-    for await (const part of stream) {
-      const content = part.choices[0]?.delta?.content || '';
-      if (content) {
-        yield content;
-      }
-    }
+    return response.choices[0].message.content.trim();
   } catch (error) {
-    console.error('Error in generateResponseStream function:', error);
+    console.error('Error in generateResponse function:', error);
     throw new Error(`Failed to generate response: ${error.message}`);
   }
 }
 
-module.exports = { generateResponseStream };
+module.exports = { generateResponse };
