@@ -65,6 +65,11 @@ async function handleSwitchModel(msg, model) {
     return;
   }
 
+  if (OPENAI_MODELS.length === 0) {
+    await bot.sendMessage(chatId, "没有可用的模型。请联系管理员设置 OPENAI_MODELS 环境变量。", {parse_mode: 'Markdown'});
+    return;
+  }
+
   if (OPENAI_MODELS.includes(model)) {
     await redis.set(`user:${userId}:model`, model);
     await bot.sendMessage(chatId, `模型已切换到 ${model}`, {parse_mode: 'Markdown'});
@@ -98,6 +103,11 @@ async function handleMessage(msg) {
     } else if (msg.text && !msg.text.startsWith('/')) {
       console.log('Generating response for:', msg.text);
       
+      if (OPENAI_MODELS.length === 0) {
+        await bot.sendMessage(chatId, "没有可用的模型。请联系管理员设置 OPENAI_MODELS 环境变量。", {parse_mode: 'Markdown'});
+        return;
+      }
+
       // Send "typing" action
       await bot.sendChatAction(chatId, 'typing');
       
