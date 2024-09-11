@@ -1,6 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS } = require('./config');
 const { generateResponse } = require('./api');
+const { getConversationHistory, addToConversationHistory } = require('./redis');
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
@@ -35,8 +36,14 @@ async function handleMessage(msg) {
       // Send "typing" action
       await bot.sendChatAction(chatId, 'typing');
       
-      const response = await generateResponse(msg.text);
+      // Get conversation history
+      const conversationHistory = await getConversationHistory(userId);
+      
+      const response = await generateResponse(msg.text, conversationHistory);
       console.log('Generated response:', response);
+      
+      // Add to conversation history
+      await addToConversationHistory(userId, msg.text, response);
       
       // Send the response with Markdown parsing
       await bot.sendMessage(chatId, response, {parse_mode: 'Markdown'});
