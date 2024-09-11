@@ -1,9 +1,14 @@
 const TelegramBot = require('node-telegram-bot-api');
-const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS } = require('./config');
+const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS } = require('./config');
 const { generateResponse } = require('./api');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
+const { Redis } = require('@upstash/redis');
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
 async function handleStart(msg) {
   console.log('Handling /start command');
@@ -45,6 +50,29 @@ async function handleHistory(msg) {
   }
 }
 
+async function handleHelp(msg) {
+  const chatId = msg.chat.id;
+  const helpMessage = "等待补充";
+  await bot.sendMessage(chatId, helpMessage, {parse_mode: 'Markdown'});
+}
+
+async function handleSwitchModel(msg, model) {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
+  
+  if (!model) {
+    await bot.sendMessage(chatId, "请提供一个模型名称。使用方法：/switchmodel [model_name]", {parse_mode: 'Markdown'});
+    return;
+  }
+
+  if (OPENAI_MODELS.includes(model)) {
+    await redis.set(`user:${userId}:model`, model);
+    await bot.sendMessage(chatId, `模型已切换到 ${model}`, {parse_mode: 'Markdown'});
+  } else {
+    await bot.sendMessage(chatId, `无效的模型名称。请使用 /help 查看可用模型。`, {parse_mode: 'Markdown'});
+  }
+}
+
 async function handleMessage(msg) {
   console.log('Handling message:', JSON.stringify(msg));
   const chatId = msg.chat.id;
@@ -62,6 +90,11 @@ async function handleMessage(msg) {
       await handleNew(msg);
     } else if (msg.text === '/history') {
       await handleHistory(msg);
+    } else if (msg.text === '/help') {
+      await handleHelp(msg);
+    } else if (msg.text.startsWith('/switchmodel')) {
+      const model = msg.text.split(' ')[1];
+      await handleSwitchModel(msg, model);
     } else if (msg.text && !msg.text.startsWith('/')) {
       console.log('Generating response for:', msg.text);
       
@@ -72,7 +105,10 @@ async function handleMessage(msg) {
       const conversationHistory = await getConversationHistory(userId);
       console.log('Retrieved conversation history:', JSON.stringify(conversationHistory));
       
-      const response = await generateResponse(msg.text, conversationHistory);
+      // Get user's current model or use the first model in OPENAI_MODELS
+      const userModel = await redis.get(`user:${userId}:model`) || OPENAI_MODELS[0];
+      
+      const response = await generateResponse(msg.text, conversationHistory, userModel);
       console.log('Generated response:', response);
       
       // Add to conversation history
