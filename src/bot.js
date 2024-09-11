@@ -1,7 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
-const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS } = require('./config');
+const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS } = require('./config');
 const { generateResponse } = require('./api');
-const { getConversationHistory, addToConversationHistory, clearConversationHistory, getUserModel, setUserModel } = require('./redis');
+const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
@@ -45,24 +45,6 @@ async function handleHistory(msg) {
   }
 }
 
-async function handleHelp(msg) {
-  const chatId = msg.chat.id;
-  await bot.sendMessage(chatId, '等待补充', {parse_mode: 'Markdown'});
-}
-
-async function handleSwitchModel(msg) {
-  const chatId = msg.chat.id;
-  const userId = msg.from.id;
-  const modelName = msg.text.split(' ')[1];
-
-  if (OPENAI_MODELS.includes(modelName)) {
-    await setUserModel(userId, modelName);
-    await bot.sendMessage(chatId, `Model switched to ${modelName}`, {parse_mode: 'Markdown'});
-  } else {
-    await bot.sendMessage(chatId, 'Invalid model name. Use /help to see available models.', {parse_mode: 'Markdown'});
-  }
-}
-
 async function handleMessage(msg) {
   console.log('Handling message:', JSON.stringify(msg));
   const chatId = msg.chat.id;
@@ -80,23 +62,17 @@ async function handleMessage(msg) {
       await handleNew(msg);
     } else if (msg.text === '/history') {
       await handleHistory(msg);
-    } else if (msg.text === '/help') {
-      await handleHelp(msg);
-    } else if (msg.text.startsWith('/switchmodel')) {
-      await handleSwitchModel(msg);
     } else if (msg.text && !msg.text.startsWith('/')) {
       console.log('Generating response for:', msg.text);
       
       // Send "typing" action
       await bot.sendChatAction(chatId, 'typing');
       
-      // Get conversation history and user's model
+      // Get conversation history
       const conversationHistory = await getConversationHistory(userId);
-      const userModel = await getUserModel(userId) || OPENAI_MODELS[0];
       console.log('Retrieved conversation history:', JSON.stringify(conversationHistory));
-      console.log('Using model:', userModel);
       
-      const response = await generateResponse(msg.text, conversationHistory, userModel);
+      const response = await generateResponse(msg.text, conversationHistory);
       console.log('Generated response:', response);
       
       // Add to conversation history
