@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS } = require('./config');
-const { generateResponse } = require('./api');
+const { generateStreamResponse } = require('./api');
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
@@ -25,10 +25,35 @@ async function handleMessage(msg) {
     }
 
     if (msg.text && !msg.text.startsWith('/')) {
+      const processingMessage = await bot.sendMessage(chatId, 'Processing your request...');
       console.log('Generating response for:', msg.text);
-      const response = await generateResponse(msg.text);
-      console.log('Generated response:', response);
-      await bot.sendMessage(chatId, response);
+
+      let fullResponse = '';
+      const stream = await generateStreamResponse(msg.text);
+
+      for await (const part of stream) {
+        const content = part.choices[0]?.delta?.content || '';
+        fullResponse += content;
+
+        // 实现打字机效果
+        if (content) {
+          try {
+            await bot.editMessageText(fullResponse, {
+              chat_id: chatId,
+              message_id: processingMessage.message_id
+            });
+          } catch (editError) {
+            console.error('Error updating message:', editError);
+          }
+        }
+      }
+
+      if (!fullResponse.trim()) {
+        await bot.editMessageText('Sorry, I couldn\'t generate a response. Please try again.', {
+          chat_id: chatId,
+          message_id: processingMessage.message_id
+        });
+      }
       console.log('Response sent successfully');
     } else {
       console.log('Received non-text or command message');
