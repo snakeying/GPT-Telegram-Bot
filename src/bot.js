@@ -38,6 +38,7 @@ async function handleMessage(msg) {
       
       // Get conversation history
       const conversationHistory = await getConversationHistory(userId);
+      console.log('Retrieved conversation history:', JSON.stringify(conversationHistory));
       
       const response = await generateResponse(msg.text, conversationHistory);
       console.log('Generated response:', response);
