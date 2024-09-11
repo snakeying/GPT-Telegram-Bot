@@ -27,7 +27,8 @@ async function handleMessage(msg) {
     if (msg.text && !msg.text.startsWith('/')) {
       console.log('Generating response for:', msg.text);
       const response = await generateResponse(msg.text);
-      await bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
+      console.log('Generated response:', response);
+      await bot.sendMessage(chatId, response);
       console.log('Response sent successfully');
     } else {
       console.log('Received non-text or command message');
