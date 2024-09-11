@@ -11,7 +11,7 @@ bot.onText(/\/start/, (msg) => {
     .catch(error => console.error('Error sending start message:', error));
 });
 
-bot.on('message', async (msg) => {
+async function handleMessage(msg) {
   console.log('Received message:', JSON.stringify(msg));
   const chatId = msg.chat.id;
   const userId = msg.from.id;
@@ -19,7 +19,7 @@ bot.on('message', async (msg) => {
   if (!WHITELISTED_USERS.includes(userId)) {
     console.log('User not whitelisted:', userId);
     console.log('Whitelisted users:', WHITELISTED_USERS);
-    bot.sendMessage(chatId, 'Sorry, you are not authorized to use this bot.')
+    await bot.sendMessage(chatId, 'Sorry, you are not authorized to use this bot.')
       .catch(error => console.error('Error sending unauthorized message:', error));
     return;
   }
@@ -31,10 +31,10 @@ bot.on('message', async (msg) => {
       console.log('Response sent successfully');
     } catch (error) {
       console.error('Error in message handling:', error);
-      bot.sendMessage(chatId, 'Sorry, there was an error generating the response. Please try again later.')
+      await bot.sendMessage(chatId, 'Sorry, there was an error generating the response. Please try again later.')
         .catch(sendError => console.error('Error sending error message:', sendError));
     }
   }
-});
+}
 
-module.exports = bot;
+module.exports = { bot, handleMessage };
