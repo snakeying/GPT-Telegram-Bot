@@ -1,39 +1,46 @@
-const axios = require('axios');
 const { OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL } = require('./config');
 
-const openaiApi = axios.create({
-  baseURL: OPENAI_BASE_URL,
-  headers: {
-    'Authorization': `Bearer ${OPENAI_API_KEY}`,
-    'Content-Type': 'application/json',
-  },
-  timeout: 60000, // 设置 60 秒超时
-});
-
 async function generateResponse(prompt) {
+  const fullUrl = `${OPENAI_BASE_URL}/chat/completions`;
+  console.log('Full API URL:', fullUrl);
+
+  const requestBody = {
+    model: OPENAI_MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+  };
+  console.log('Request body:', JSON.stringify(requestBody));
+
+  const requestOptions = {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  };
+
   try {
-    console.log('Calling OpenAI API with prompt:', prompt);
-    console.log('Using model:', OPENAI_MODEL);
-    const fullUrl = `${OPENAI_BASE_URL}/chat/completions`;
-    console.log('Full API URL:', fullUrl);
-    
-    const requestBody = {
-      model: OPENAI_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-    };
-    console.log('Request body:', JSON.stringify(requestBody));
-
     console.log('Sending request to OpenAI API...');
-    const response = await openaiApi.post('/chat/completions', requestBody);
+    const fetchPromise = fetch(fullUrl, requestOptions);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timed out')), 50000)
+    );
+
+    const response = await Promise.race([fetchPromise, timeoutPromise]);
     console.log('Received response from OpenAI API');
+    console.log('Response status:', response.status);
+    console.log('Response headers:', JSON.stringify(Object.fromEntries(response.headers)));
 
-    console.log('OpenAI API response status:', response.status);
-    console.log('OpenAI API response headers:', JSON.stringify(response.headers));
-    console.log('OpenAI API response data:', JSON.stringify(response.data));
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-    if (response.data && response.data.choices && response.data.choices.length > 0) {
-      const generatedText = response.data.choices[0].message.content.trim();
+    const data = await response.json();
+    console.log('Response data:', JSON.stringify(data));
+
+    if (data.choices && data.choices.length > 0) {
+      const generatedText = data.choices[0].message.content.trim();
       console.log('Generated text:', generatedText);
       return generatedText;
     } else {
@@ -41,15 +48,6 @@ async function generateResponse(prompt) {
     }
   } catch (error) {
     console.error('Error in generateResponse function:', error);
-    if (error.response) {
-      console.error('API response status:', error.response.status);
-      console.error('API response headers:', JSON.stringify(error.response.headers));
-      console.error('API response data:', JSON.stringify(error.response.data));
-    } else if (error.request) {
-      console.error('No response received. Request details:', error.request);
-    } else {
-      console.error('Error setting up request:', error.message);
-    }
     throw new Error(`Failed to generate response from OpenAI: ${error.message}`);
   }
 }
