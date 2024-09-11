@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS } = require('./config');
-const { generateResponseStream } = require('./api');
+const { generateResponse } = require('./api');
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
@@ -26,29 +26,8 @@ async function handleMessage(msg) {
 
     if (msg.text && !msg.text.startsWith('/')) {
       console.log('Generating response for:', msg.text);
-      let fullResponse = '';
-      let messageId = null;
-
-      for await (const partialResponse of generateResponseStream(msg.text)) {
-        fullResponse += partialResponse;
-        if (messageId) {
-          try {
-            await bot.editMessageText(fullResponse, {
-              chat_id: chatId,
-              message_id: messageId,
-              parse_mode: 'Markdown'
-            });
-          } catch (error) {
-            if (error.response && error.response.body && error.response.body.description !== 'Bad Request: message is not modified') {
-              console.error('Error editing message:', error);
-            }
-          }
-        } else {
-          const sentMsg = await bot.sendMessage(chatId, fullResponse, { parse_mode: 'Markdown' });
-          messageId = sentMsg.message_id;
-        }
-      }
-
+      const response = await generateResponse(msg.text);
+      await bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
       console.log('Response sent successfully');
     } else {
       console.log('Received non-text or command message');
