@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS } = require('./config');
-const { generateStreamResponse } = require('./api');
+const { generateResponseStream } = require('./api');
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
@@ -25,35 +25,42 @@ async function handleMessage(msg) {
     }
 
     if (msg.text && !msg.text.startsWith('/')) {
-      const processingMessage = await bot.sendMessage(chatId, 'Processing your request...');
       console.log('Generating response for:', msg.text);
-
       let fullResponse = '';
-      const stream = await generateStreamResponse(msg.text);
+      let lastMessageId = null;
 
-      for await (const part of stream) {
-        const content = part.choices[0]?.delta?.content || '';
-        fullResponse += content;
-
-        // 实现打字机效果
-        if (content) {
-          try {
-            await bot.editMessageText(fullResponse, {
-              chat_id: chatId,
-              message_id: processingMessage.message_id
-            });
-          } catch (editError) {
-            console.error('Error updating message:', editError);
+      for await (const partialResponse of generateResponseStream(msg.text)) {
+        fullResponse += partialResponse;
+        
+        if (fullResponse.length > 4000) {
+          // If the message is too long, send it and start a new one
+          if (lastMessageId) {
+            await bot.editMessageText(fullResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
+          } else {
+            const sentMsg = await bot.sendMessage(chatId, fullResponse, { parse_mode: 'Markdown' });
+            lastMessageId = sentMsg.message_id;
+          }
+          fullResponse = '';
+        } else if (fullResponse.length % 20 === 0 || partialResponse.includes('\n')) {
+          // Update the message every 20 characters or when there's a newline
+          if (lastMessageId) {
+            await bot.editMessageText(fullResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
+          } else {
+            const sentMsg = await bot.sendMessage(chatId, fullResponse, { parse_mode: 'Markdown' });
+            lastMessageId = sentMsg.message_id;
           }
         }
       }
 
-      if (!fullResponse.trim()) {
-        await bot.editMessageText('Sorry, I couldn\'t generate a response. Please try again.', {
-          chat_id: chatId,
-          message_id: processingMessage.message_id
-        });
+      // Send or update the final message
+      if (fullResponse) {
+        if (lastMessageId) {
+          await bot.editMessageText(fullResponse, { chat_id: chatId, message_id: lastMessageId, parse_mode: 'Markdown' });
+        } else {
+          await bot.sendMessage(chatId, fullResponse, { parse_mode: 'Markdown' });
+        }
       }
+
       console.log('Response sent successfully');
     } else {
       console.log('Received non-text or command message');
