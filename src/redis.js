@@ -57,4 +57,30 @@ async function clearConversationHistory(userId) {
   }
 }
 
-module.exports = { getConversationHistory, addToConversationHistory, clearConversationHistory };
+async function getUserModel(userId) {
+  try {
+    const key = `user:${userId}:model`;
+    return await redis.get(key);
+  } catch (error) {
+    console.error('Error getting user model:', error);
+    return null;
+  }
+}
+
+async function setUserModel(userId, model) {
+  try {
+    const key = `user:${userId}:model`;
+    await redis.set(key, model);
+    console.log(`Set model for user ${userId} to ${model}`);
+  } catch (error) {
+    console.error('Error setting user model:', error);
+  }
+}
+
+module.exports = { 
+  getConversationHistory, 
+  addToConversationHistory, 
+  clearConversationHistory,
+  getUserModel,
+  setUserModel
+};
