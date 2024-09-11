@@ -4,16 +4,17 @@ const { generateResponse } = require('./api');
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
-bot.onText(/\/start/, async (msg) => {
-  console.log('Received /start command');
+async function handleStart(msg) {
+  console.log('Handling /start command');
   const chatId = msg.chat.id;
   try {
     await bot.sendMessage(chatId, 'Welcome! Send me a message and I\'ll generate a response using AI.', {parse_mode: 'Markdown'});
     console.log('Start message sent successfully');
   } catch (error) {
     console.error('Error sending start message:', error);
+    throw error;
   }
-});
+}
 
 async function handleMessage(msg) {
   console.log('Handling message:', JSON.stringify(msg));
@@ -50,4 +51,4 @@ async function handleMessage(msg) {
   }
 }
 
-module.exports = { bot, handleMessage };
+module.exports = { bot, handleMessage, handleStart };
