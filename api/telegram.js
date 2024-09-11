@@ -1,4 +1,4 @@
-const { bot, handleMessage } = require('../src/bot');
+const { bot, handleMessage, handleStart } = require('../src/bot');
 
 module.exports = async (req, res) => {
   console.log('Received webhook request:', JSON.stringify(req.body));
@@ -9,7 +9,11 @@ module.exports = async (req, res) => {
       
       if (update.message) {
         console.log('Handling message:', JSON.stringify(update.message));
-        await handleMessage(update.message);
+        if (update.message.text === '/start') {
+          await handleStart(update.message);
+        } else {
+          await handleMessage(update.message);
+        }
         console.log('Message handled successfully');
       } else {
         console.log('Update does not contain a message');
@@ -20,7 +24,6 @@ module.exports = async (req, res) => {
     res.status(200).send('OK');
   } catch (error) {
     console.error("Error in webhook handler:", error);
-    // 发送详细的错误信息
     res.status(500).json({
       error: 'Internal Server Error',
       message: error.message,
