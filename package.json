@@ -2,10 +2,10 @@
   "name": "gpt-telegram-bot",
   "version": "1.0.0",
   "description": "A Telegram bot that interacts with OpenAI's API",
-  "main": "api/telegram.js",
+  "main": "src/bot.js",
   "scripts": {
-    "start": "node api/telegram.js",
-    "dev": "nodemon api/telegram.js"
+    "start": "node src/bot.js",
+    "dev": "nodemon src/bot.js"
   },
   "dependencies": {
     "dotenv": "^10.0.0",
