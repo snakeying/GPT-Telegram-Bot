@@ -9,9 +9,11 @@ const client = new OpenAI({
 async function generateResponse(prompt, conversationHistory) {
   console.log('Generating response for:', prompt);
   console.log('Using model:', OPENAI_MODEL);
+  console.log('Conversation history:', JSON.stringify(conversationHistory));
 
   try {
     const messages = [
+      { role: 'system', content: 'You are a helpful assistant that remembers previous conversations.' },
       ...conversationHistory,
       { role: 'user', content: prompt }
     ];
