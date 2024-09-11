@@ -1,4 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
+TelegramBot.Promise = Promise;
+
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS } = require('./config');
 const { generateResponse } = require('./api');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
@@ -72,6 +74,7 @@ async function handleSwitchModel(msg, model) {
 
   if (OPENAI_MODELS.includes(model)) {
     await redis.set(`user:${userId}:model`, model);
+    console.log(`Model switched for user ${userId} to ${model}`);
     await bot.sendMessage(chatId, `模型已切换到 ${model}`, {parse_mode: 'Markdown'});
   } else {
     await bot.sendMessage(chatId, `无效的模型名称。请使用 /help 查看可用模型。`, {parse_mode: 'Markdown'});
@@ -117,6 +120,7 @@ async function handleMessage(msg) {
       
       // Get user's current model or use the first model in OPENAI_MODELS
       const userModel = await redis.get(`user:${userId}:model`) || OPENAI_MODELS[0];
+      console.log(`Using model for user ${userId}: ${userModel}`);
       
       const response = await generateResponse(msg.text, conversationHistory, userModel);
       console.log('Generated response:', response);
