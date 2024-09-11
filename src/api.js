@@ -1,5 +1,5 @@
 const { OpenAI } = require('openai');
-const { OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODELS } = require('./config');
+const { OPENAI_API_KEY, OPENAI_BASE_URL } = require('./config');
 
 const client = new OpenAI({ 
   apiKey: OPENAI_API_KEY,
