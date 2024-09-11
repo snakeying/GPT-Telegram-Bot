@@ -1,7 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS } = require('./config');
 const { generateResponse } = require('./api');
-const { getConversationHistory, addToConversationHistory } = require('./redis');
+const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
@@ -14,6 +14,34 @@ async function handleStart(msg) {
   } catch (error) {
     console.error('Error sending start message:', error);
     throw error;
+  }
+}
+
+async function handleNew(msg) {
+  console.log('Handling /new command');
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
+  try {
+    await clearConversationHistory(userId);
+    await bot.sendMessage(chatId, 'New conversation started. Previous context has been cleared.', {parse_mode: 'Markdown'});
+    console.log('New conversation message sent successfully');
+  } catch (error) {
+    console.error('Error handling new conversation:', error);
+    throw error;
+  }
+}
+
+async function handleHistory(msg) {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
+
+  try {
+    const history = await getConversationHistory(userId);
+    const historyText = history.map(m => `${m.role}: ${m.content}`).join('\n\n');
+    await bot.sendMessage(chatId, `Your conversation history:\n\n${historyText}`, {parse_mode: 'Markdown'});
+  } catch (error) {
+    console.error('Error retrieving conversation history:', error);
+    await bot.sendMessage(chatId, 'Sorry, there was an error retrieving your conversation history.', {parse_mode: 'Markdown'});
   }
 }
 
@@ -30,7 +58,11 @@ async function handleMessage(msg) {
       return;
     }
 
-    if (msg.text && !msg.text.startsWith('/')) {
+    if (msg.text === '/new') {
+      await handleNew(msg);
+    } else if (msg.text === '/history') {
+      await handleHistory(msg);
+    } else if (msg.text && !msg.text.startsWith('/')) {
       console.log('Generating response for:', msg.text);
       
       // Send "typing" action
