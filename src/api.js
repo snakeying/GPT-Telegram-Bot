@@ -1,7 +1,7 @@
 const { OpenAI } = require('openai');
-const { OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL, DALL_E_MODEL } = require('./config');  // 引入DALL_E_MODEL
+const { OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL, DALL_E_MODEL } = require('./config');
 
-const client = new OpenAI({ 
+const client = new OpenAI({
   apiKey: OPENAI_API_KEY,
   baseURL: OPENAI_BASE_URL
 });
@@ -10,7 +10,7 @@ const client = new OpenAI({
 async function generateResponse(prompt, conversationHistory) {
   try {
     const messages = [
-      { role: 'system', content: 'You are a helpful assistant.' },
+      { role: 'system', content: 'You are a helpful assistant that remembers previous conversations.' },
       ...conversationHistory,
       { role: 'user', content: prompt }
     ];
@@ -35,7 +35,7 @@ async function generateResponse(prompt, conversationHistory) {
 // 生成图片
 async function generateImage(prompt, size = '1024x1024') {
   try {
-    const response = await client.images.generate({
+    const response = await client.images.create({
       prompt: prompt,
       n: 1,
       size: size,
