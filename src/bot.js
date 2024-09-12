@@ -3,7 +3,7 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS, DEFAULT_MODEL } = require('./config');
 const { generateResponse } = require('./api');
-const { generateImage } = require('../api/generateImage'); // 导入 generateImage 函数
+const { generateImage } = require('../api/generateImage');  // 导入 generateImage 函数
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 
 // 当前模型，初始值为默认模型
@@ -11,7 +11,7 @@ let currentModel = DEFAULT_MODEL;
 
 // 创建 Telegram bot 实例
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
-  cancellation: true  // 启用取消 promise 的功能
+  polling: true  // 启用轮询模式，避免使用弃用的 cancellation 功能
 });
 
 // 处理 /start 命令
@@ -89,20 +89,27 @@ async function handleImageCommand(msg) {
   const chatId = msg.chat.id;
   const text = msg.text.split(' ');
 
+  // 确保至少有两个参数 (/img 和 prompt)
   if (text.length < 2) {
     await bot.sendMessage(chatId, 'Please provide a prompt to generate an image, e.g., /img A cyberpunk city');
     return;
   }
 
-  const prompt = text.slice(1, -1).join(' ');
-  let resolution = text[text.length - 1];
+  // 提取 prompt，并去除命令部分 (/img)
+  const prompt = text.slice(1).join(' ').trim();  // 这里确保正确提取 prompt
 
-  if (!resolution.includes('x')) {
-    resolution = '1024x1024';  // 默认分辨率
+  // 默认分辨率
+  let resolution = '1024x1024';
+
+  // 检查最后一个参数是否是分辨率
+  const lastWord = text[text.length - 1];
+  if (lastWord.includes('x') && SUPPORTED_RESOLUTIONS.includes(lastWord)) {
+    resolution = lastWord;
   }
 
-  if (!['256x256', '512x512', '1024x1024'].includes(resolution)) {
-    await bot.sendMessage(chatId, 'Invalid resolution. Please use one of the following: 256x256, 512x512, 1024x1024.');
+  // 验证 prompt 不为空
+  if (!prompt) {
+    await bot.sendMessage(chatId, 'Prompt cannot be empty. Please provide a valid description.');
     return;
   }
 
