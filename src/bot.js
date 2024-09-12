@@ -11,7 +11,7 @@ let currentModel = DEFAULT_MODEL;
 
 // 创建 Telegram bot 实例
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
-  cancellation: true  // 启用取消 promise 的功能
+  cancellation: true  // 恢复取消 promise 的功能
 });
 
 // 处理 /start 命令
@@ -87,31 +87,18 @@ async function handleSwitchModel(msg) {
 // 处理 /img 命令
 async function handleImageCommand(msg) {
   const chatId = msg.chat.id;
-  const text = msg.text.split(' ');
+  const text = msg.text;
 
-  // 确保至少有两个参数 (/img 和 prompt)
-  if (text.length < 2) {
-    await bot.sendMessage(chatId, 'Please provide a prompt to generate an image, e.g., /img A cyberpunk city');
-    return;
-  }
+  // 提取 "/img" 后的 prompt
+  const prompt = text.substring(5).trim();  // 获取 "/img " 后面的内容
 
-  // 提取 prompt，并去除命令部分 (/img)
-  const prompt = text.slice(1).join(' ').trim();  // 这里确保正确提取 prompt
-
-  // 默认分辨率
-  let resolution = '1024x1024';
-
-  // 检查最后一个参数是否是分辨率
-  const lastWord = text[text.length - 1];
-  if (lastWord.includes('x') && SUPPORTED_RESOLUTIONS.includes(lastWord)) {
-    resolution = lastWord;
-  }
-
-  // 验证 prompt 不为空
+  // 验证 prompt 是否为空
   if (!prompt) {
     await bot.sendMessage(chatId, 'Prompt cannot be empty. Please provide a valid description.');
     return;
   }
+
+  const resolution = '1024x1024';  // 默认分辨率
 
   try {
     const imageUrl = await generateImage(prompt, resolution);
@@ -132,7 +119,9 @@ async function handleMessage(msg) {
       return;
     }
 
-    if (msg.text === '/new') {
+    if (msg.text === '/start') {
+      await handleStart(msg);
+    } else if (msg.text === '/new') {
       await handleNew(msg);
     } else if (msg.text === '/history') {
       await handleHistory(msg);
@@ -157,4 +146,5 @@ async function handleMessage(msg) {
   }
 }
 
-module.exports = { bot, handleMessage, handleStart };
+// 启动 bot
+bot.on('message', handleMessage);
