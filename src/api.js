@@ -6,14 +6,21 @@ const client = new OpenAI({
   baseURL: OPENAI_BASE_URL
 });
 
-async function generateResponse(prompt) {
+async function generateResponse(prompt, conversationHistory) {
   console.log('Generating response for:', prompt);
   console.log('Using model:', OPENAI_MODEL);
+  console.log('Conversation history:', JSON.stringify(conversationHistory));
 
   try {
+    const messages = [
+      { role: 'system', content: 'You are a helpful assistant that remembers previous conversations.' },
+      ...conversationHistory,
+      { role: 'user', content: prompt }
+    ];
+
     const response = await client.chat.completions.create({
       model: OPENAI_MODEL,
-      messages: [{ role: 'user', content: prompt }],
+      messages: messages,
       temperature: 0.7,
     });
 
