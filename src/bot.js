@@ -3,6 +3,7 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS, DEFAULT_MODEL } = require('./config');
 const { generateResponse } = require('./api');
+const { generateImage } = require('./api/generateImage');  // 导入 generateImage 函数
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 
 // 当前模型，初始值为默认模型
@@ -83,6 +84,36 @@ async function handleSwitchModel(msg) {
   }
 }
 
+// 处理 /img 命令
+async function handleImageCommand(msg) {
+  const chatId = msg.chat.id;
+  const text = msg.text.split(' ');
+
+  if (text.length < 2) {
+    await bot.sendMessage(chatId, 'Please provide a prompt to generate an image, e.g., /img A cyberpunk city');
+    return;
+  }
+
+  const prompt = text.slice(1, -1).join(' ');
+  let resolution = text[text.length - 1];
+
+  if (!resolution.includes('x')) {
+    resolution = '1024x1024';  // 默认分辨率
+  }
+
+  if (!['256x256', '512x512', '1024x1024'].includes(resolution)) {
+    await bot.sendMessage(chatId, 'Invalid resolution. Please use one of the following: 256x256, 512x512, 1024x1024.');
+    return;
+  }
+
+  try {
+    const imageUrl = await generateImage(prompt, resolution);
+    await bot.sendPhoto(chatId, imageUrl);
+  } catch (error) {
+    await bot.sendMessage(chatId, `Error generating image: ${error.message}`);
+  }
+}
+
 // 处理普通消息
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
@@ -102,6 +133,8 @@ async function handleMessage(msg) {
       await handleHelp(msg);
     } else if (msg.text.startsWith('/switchmodel')) {
       await handleSwitchModel(msg);
+    } else if (msg.text.startsWith('/img')) {
+      await handleImageCommand(msg);  // 处理 /img 命令
     } else if (msg.text && !msg.text.startsWith('/')) {
       await bot.sendChatAction(chatId, 'typing');  // Bot 正在输入的状态
       const conversationHistory = await getConversationHistory(userId);
