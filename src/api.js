@@ -13,7 +13,7 @@ async function generateResponse(prompt, conversationHistory) {
 
   try {
     const messages = [
-      { role: 'system', content: 'You are a helpful assistant.' },
+      { role: 'system', content: 'You are a helpful assistant that remembers previous conversations.' },
       ...conversationHistory,
       { role: 'user', content: prompt }
     ];

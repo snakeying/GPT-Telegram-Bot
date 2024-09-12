@@ -3,7 +3,6 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS, DEFAULT_MODEL } = require('./config');
 const { generateResponse } = require('./api');
-const { generateImage } = require('../api/generateImage');  // 导入 generateImage 函数
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 
 // 当前模型，初始值为默认模型
@@ -11,7 +10,7 @@ let currentModel = DEFAULT_MODEL;
 
 // 创建 Telegram bot 实例
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
-  cancellation: true  // 恢复取消 promise 的功能
+  cancellation: true  // 启用取消 promise 的功能
 });
 
 // 处理 /start 命令
@@ -84,30 +83,6 @@ async function handleSwitchModel(msg) {
   }
 }
 
-// 处理 /img 命令
-async function handleImageCommand(msg) {
-  const chatId = msg.chat.id;
-  const text = msg.text;
-
-  // 提取 "/img" 后的 prompt
-  const prompt = text.substring(5).trim();  // 获取 "/img " 后面的内容
-
-  // 验证 prompt 是否为空
-  if (!prompt) {
-    await bot.sendMessage(chatId, 'Prompt cannot be empty. Please provide a valid description.');
-    return;
-  }
-
-  const resolution = '1024x1024';  // 默认分辨率
-
-  try {
-    const imageUrl = await generateImage(prompt, resolution);
-    await bot.sendPhoto(chatId, imageUrl);
-  } catch (error) {
-    await bot.sendMessage(chatId, `Error generating image: ${error.message}`);
-  }
-}
-
 // 处理普通消息
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
@@ -119,9 +94,7 @@ async function handleMessage(msg) {
       return;
     }
 
-    if (msg.text === '/start') {
-      await handleStart(msg);
-    } else if (msg.text === '/new') {
+    if (msg.text === '/new') {
       await handleNew(msg);
     } else if (msg.text === '/history') {
       await handleHistory(msg);
@@ -129,8 +102,6 @@ async function handleMessage(msg) {
       await handleHelp(msg);
     } else if (msg.text.startsWith('/switchmodel')) {
       await handleSwitchModel(msg);
-    } else if (msg.text.startsWith('/img')) {
-      await handleImageCommand(msg);  // 处理 /img 命令
     } else if (msg.text && !msg.text.startsWith('/')) {
       await bot.sendChatAction(chatId, 'typing');  // Bot 正在输入的状态
       const conversationHistory = await getConversationHistory(userId);
@@ -146,5 +117,4 @@ async function handleMessage(msg) {
   }
 }
 
-// 启动 bot
-bot.on('message', handleMessage);
+module.exports = { bot, handleMessage, handleStart };
