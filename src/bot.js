@@ -1,8 +1,6 @@
-// 确保最早加载 node-telegram-bot-api
 const TelegramBot = require('node-telegram-bot-api'); 
-
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS, DEFAULT_MODEL } = require('./config');
-const { generateResponse } = require('./api');
+const { generateResponse, generateImage } = require('./api');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 
 // 当前模型，初始值为默认模型
@@ -83,6 +81,37 @@ async function handleSwitchModel(msg) {
   }
 }
 
+// 处理 /img 命令
+async function handleImageCommand(msg) {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
+  const args = msg.text.split(' ');
+
+  if (args.length < 2) {
+    await bot.sendMessage(chatId, 'Please provide a prompt for image generation.', { parse_mode: 'Markdown' });
+    return;
+  }
+
+  const prompt = args.slice(1, -1).join(' ');
+  const size = args[args.length - 1].match(/^\d+x\d+$/) ? args[args.length - 1] : '1024x1024';  // 默认大小
+
+  const supportedSizes = ['256x256', '512x512', '1024x1024'];
+
+  if (!supportedSizes.includes(size)) {
+    await bot.sendMessage(chatId, `Unsupported image size. Available sizes: ${supportedSizes.join(', ')}`, { parse_mode: 'Markdown' });
+    return;
+  }
+
+  try {
+    await bot.sendChatAction(chatId, 'upload_photo');
+    const imageUrl = await generateImage(prompt, size);
+    await bot.sendPhoto(chatId, imageUrl, { caption: `Generated image: ${prompt} (${size})` });
+  } catch (error) {
+    console.error('Error generating image:', error);
+    await bot.sendMessage(chatId, 'Sorry, there was an error generating the image. Please try again later.', { parse_mode: 'Markdown' });
+  }
+}
+
 // 处理普通消息
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
@@ -90,7 +119,7 @@ async function handleMessage(msg) {
 
   try {
     if (!WHITELISTED_USERS.includes(userId)) {
-      await bot.sendMessage(chatId, 'Sorry, you are not authorized to use this bot.', {parse_mode: 'Markdown'});
+      await bot.sendMessage(chatId, 'Sorry, you are not authorized to use this bot.', { parse_mode: 'Markdown' });
       return;
     }
 
@@ -102,19 +131,21 @@ async function handleMessage(msg) {
       await handleHelp(msg);
     } else if (msg.text.startsWith('/switchmodel')) {
       await handleSwitchModel(msg);
+    } else if (msg.text.startsWith('/img')) {
+      await handleImageCommand(msg);  // 新增 /img 命令处理
     } else if (msg.text && !msg.text.startsWith('/')) {
-      await bot.sendChatAction(chatId, 'typing');  // Bot 正在输入的状态
+      await bot.sendChatAction(chatId, 'typing');
       const conversationHistory = await getConversationHistory(userId);
-      const response = await generateResponse(msg.text, conversationHistory, currentModel);  // 使用当前模型生成响应
+      const response = await generateResponse(msg.text, conversationHistory, currentModel);
       await addToConversationHistory(userId, msg.text, response);
-      await bot.sendMessage(chatId, response, {parse_mode: 'Markdown'});
+      await bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
     } else {
       console.log('Received non-text or command message');
     }
   } catch (error) {
     console.error('Error in handleMessage:', error);
-    await bot.sendMessage(chatId, 'Sorry, there was an error processing your message. Please try again later.', {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, 'Sorry, there was an error processing your message. Please try again later.', { parse_mode: 'Markdown' });
   }
 }
 
-module.exports = { bot, handleMessage, handleStart };
+module.exports = { bot, handleMessage, handleStart, handleImageCommand };
