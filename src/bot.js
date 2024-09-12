@@ -103,7 +103,7 @@ async function handleImageCommand(msg) {
   }
 
   try {
-    await bot.sendChatAction(chatId, 'upload_photo');
+    await bot.sendChatAction(chatId, 'upload_photo');  // 发送图片前显示上传状态
     const imageUrl = await generateImage(prompt, size);
     await bot.sendPhoto(chatId, imageUrl, { caption: `Generated image: ${prompt} (${size})` });
   } catch (error) {
