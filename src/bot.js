@@ -11,7 +11,7 @@ let currentModel = DEFAULT_MODEL;
 
 // 创建 Telegram bot 实例
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
-  polling: true  // 启用轮询模式，避免使用弃用的 cancellation 功能
+  cancellation: true  // 启用取消 promise 的功能
 });
 
 // 处理 /start 命令
