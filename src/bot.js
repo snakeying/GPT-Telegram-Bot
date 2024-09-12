@@ -3,7 +3,7 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS, DEFAULT_MODEL } = require('./config');
 const { generateResponse } = require('./api');
-const { generateImage } = require('./api/generateImage');  // 导入 generateImage 函数
+const { generateImage } = require('../api/generateImage'); // 导入 generateImage 函数
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 
 // 当前模型，初始值为默认模型
