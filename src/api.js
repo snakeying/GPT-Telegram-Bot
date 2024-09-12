@@ -8,13 +8,9 @@ const client = new OpenAI({
 
 // 生成文本响应
 async function generateResponse(prompt, conversationHistory) {
-  console.log('Generating response for:', prompt);
-  console.log('Using model:', OPENAI_MODEL);
-  console.log('Conversation history:', JSON.stringify(conversationHistory));
-
   try {
     const messages = [
-      { role: 'system', content: 'You are a helpful assistant that remembers previous conversations.' },
+      { role: 'system', content: 'You are a helpful assistant.' },
       ...conversationHistory,
       { role: 'user', content: prompt }
     ];
@@ -25,12 +21,8 @@ async function generateResponse(prompt, conversationHistory) {
       temperature: 0.7,
     });
 
-    console.log('Received response from OpenAI API');
-
     if (response.choices && response.choices.length > 0) {
-      const generatedText = response.choices[0].message.content.trim();
-      console.log('Generated text:', generatedText);
-      return generatedText;
+      return response.choices[0].message.content.trim();
     } else {
       throw new Error('Unexpected API response structure');
     }
@@ -43,11 +35,11 @@ async function generateResponse(prompt, conversationHistory) {
 // 生成图片
 async function generateImage(prompt, size = '1024x1024') {
   try {
-    const response = await client.images.create({
+    const response = await client.images.generate({
       prompt: prompt,
       n: 1,
       size: size,
-      model: DALL_E_MODEL || 'dall-e-3'  // 使用DALL_E_MODEL环境变量或默认DALL·E 3
+      model: DALL_E_MODEL || 'dall-e-3'
     });
 
     if (response.data && response.data.length > 0) {
