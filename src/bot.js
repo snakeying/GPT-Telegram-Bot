@@ -78,7 +78,7 @@ async function handleSwitchModel(msg) {
     await clearConversationHistory(userId);
     await bot.sendMessage(chatId, `Model switched to: ${modelName}. Previous conversation has been cleared.`, {parse_mode: 'Markdown'});
   } else {
-    await bot.sendMessage(chatId, `Invalid model name. Use /help to see available models.`, {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, `Invalid model name. Available models are: ${OPENAI_MODELS.join(', ')}`, {parse_mode: 'Markdown'});
   }
 }
 
@@ -91,21 +91,33 @@ async function handleImageGeneration(msg) {
   let size = '1024x1024';
   let prompt;
 
-  if (VALID_SIZES.includes(args[args.length - 1])) {
-    size = args.pop();
-    prompt = args.join(' ');
-  } else {
-    prompt = args.join(' ');
+  // 检查最后一个参数是否可能是尺寸
+  const possibleSize = args[args.length - 1];
+  if (possibleSize.includes('x')) {
+    const [width, height] = possibleSize.split('x').map(Number);
+    if (VALID_SIZES.includes(`${width}x${height}`)) {
+      size = `${width}x${height}`;
+      args.pop(); // 从参数列表中移除尺寸
+    } else {
+      // 如果尺寸无效，发送错误消息并返回
+      await bot.sendMessage(chatId, `无效的图片大小: ${possibleSize}。请使用以下有效尺寸之一: ${VALID_SIZES.join(', ')}`);
+      return;
+    }
+  }
+
+  prompt = args.join(' ');
+
+  if (prompt.trim() === '') {
+    await bot.sendMessage(chatId, '请提供图片描述。');
+    return;
   }
 
   try {
     console.log(`开始处理图片生成请求. 聊天ID: ${chatId}, 提示: "${prompt}", 尺寸: ${size}`);
     await bot.sendChatAction(chatId, 'upload_photo');
     
-    // 生成唯一的请求ID
     const requestId = `img_req:${userId}:${Date.now()}`;
     
-    // 检查是否已经生成过图片
     const existingImageUrl = await redis.get(requestId);
     
     if (existingImageUrl) {
@@ -119,7 +131,6 @@ async function handleImageGeneration(msg) {
     console.log(`Image URL generated: ${imageUrl}`);
     
     if (imageUrl) {
-      // 存储生成的图片URL
       await redis.set(requestId, imageUrl, { ex: 3600 }); // 1小时过期
       
       console.log(`开始发送图片. URL: ${imageUrl}`);
