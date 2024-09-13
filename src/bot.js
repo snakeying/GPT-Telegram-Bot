@@ -4,6 +4,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS, DEFAULT_MODEL } = require('./config');
 const { generateResponse } = require('./api');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
+const { generateImage, VALID_SIZES } = require('./generateImage');
 
 // 当前模型，初始值为默认模型
 let currentModel = DEFAULT_MODEL;
@@ -83,6 +84,36 @@ async function handleSwitchModel(msg) {
   }
 }
 
+// 新增：处理 /img 命令
+async function handleImageGeneration(msg) {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
+  const args = msg.text.split(' ');
+  args.shift(); // 移除 "/img" 命令
+
+  let size = '1024x1024';
+  let prompt;
+
+  if (VALID_SIZES.includes(args[args.length - 1])) {
+    size = args.pop();
+    prompt = args.join(' ');
+  } else {
+    prompt = args.join(' ');
+  }
+
+  try {
+    await bot.sendChatAction(chatId, 'upload_photo');
+    const imageUrl = await generateImage(prompt, size);
+    await bot.sendPhoto(chatId, imageUrl, { caption: prompt });
+  } catch (error) {
+    if (error.message.includes('无效的图片大小')) {
+      await bot.sendMessage(chatId, `${error.message}\n有效的图片尺寸: ${VALID_SIZES.join(', ')}`);
+    } else {
+      await bot.sendMessage(chatId, '生成图片时出错。请稍后再试。');
+    }
+  }
+}
+
 // 处理普通消息
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
@@ -102,6 +133,8 @@ async function handleMessage(msg) {
       await handleHelp(msg);
     } else if (msg.text.startsWith('/switchmodel')) {
       await handleSwitchModel(msg);
+    } else if (msg.text.startsWith('/img')) {
+      await handleImageGeneration(msg);
     } else if (msg.text && !msg.text.startsWith('/')) {
       await bot.sendChatAction(chatId, 'typing');  // Bot 正在输入的状态
       const conversationHistory = await getConversationHistory(userId);
