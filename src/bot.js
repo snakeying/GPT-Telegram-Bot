@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS, DEFAULT_MODEL } = require('./config');
-const { generateResponse } = require('./api');
+const { generateResponse, generateStreamResponse } = require('./api');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 const { generateImage, VALID_SIZES } = require('./generateImage');
 const { Redis } = require('@upstash/redis');
@@ -159,6 +159,64 @@ async function handleImageGeneration(msg) {
   }
 }
 
+async function handleStreamMessage(msg) {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
+  
+  await bot.sendChatAction(chatId, 'typing');
+  const conversationHistory = await getConversationHistory(userId);
+  const stream = await generateStreamResponse(msg.text, conversationHistory, currentModel);
+
+  let fullResponse = '';
+  let messageSent = false;
+  let messageId;
+
+  for await (const chunk of stream) {
+    const content = chunk.choices[0]?.delta?.content || '';
+    fullResponse += content;
+
+    if (fullResponse.length > 0 && !messageSent) {
+      const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
+      messageId = sentMsg.message_id;
+      messageSent = true;
+    } else if (messageSent && fullResponse.length % 20 === 0) {
+      try {
+        await bot.editMessageText(fullResponse, {
+          chat_id: chatId,
+          message_id: messageId,
+          parse_mode: 'Markdown'
+        });
+      } catch (error) {
+        console.error('Error editing message:', error);
+        // 如果编辑失败，可能是由于 Markdown 解析错误，尝试不使用 Markdown 发送
+        await bot.editMessageText(fullResponse, {
+          chat_id: chatId,
+          message_id: messageId
+        });
+      }
+    }
+  }
+
+  if (messageSent) {
+    try {
+      await bot.editMessageText(fullResponse, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: 'Markdown'
+      });
+    } catch (error) {
+      console.error('Error editing final message:', error);
+      // 如果最终编辑失败，尝试不使用 Markdown 发送
+      await bot.editMessageText(fullResponse, {
+        chat_id: chatId,
+        message_id: messageId
+      });
+    }
+  }
+
+  await addToConversationHistory(userId, msg.text, fullResponse);
+}
+
 async function handleMessage(update) {
   const msg = getMessageFromUpdate(update);
   if (!msg) {
@@ -188,11 +246,7 @@ async function handleMessage(update) {
     } else if (msg.text.startsWith('/img')) {
       await handleImageGeneration(msg);
     } else if (msg.text && !msg.text.startsWith('/')) {
-      await bot.sendChatAction(chatId, 'typing');
-      const conversationHistory = await getConversationHistory(userId);
-      const response = await generateResponse(msg.text, conversationHistory, currentModel);
-      await addToConversationHistory(userId, msg.text, response);
-      await bot.sendMessage(chatId, response, {parse_mode: 'Markdown'});
+      await handleStreamMessage(msg);
     } else {
       console.log('Received non-text or unknown command message');
     }
