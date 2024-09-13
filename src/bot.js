@@ -17,6 +17,10 @@ const redis = new Redis({
   token: UPSTASH_REDIS_REST_TOKEN,
 });
 
+function getMessageFromUpdate(update) {
+  return update.message || update.edited_message;
+}
+
 async function handleStart(msg) {
   const chatId = msg.chat.id;
   try {
@@ -155,7 +159,13 @@ async function handleImageGeneration(msg) {
   }
 }
 
-async function handleMessage(msg) {
+async function handleMessage(update) {
+  const msg = getMessageFromUpdate(update);
+  if (!msg) {
+    console.log('Update does not contain a valid message');
+    return;
+  }
+
   const chatId = msg.chat.id;
   const userId = msg.from.id;
 
@@ -192,4 +202,4 @@ async function handleMessage(msg) {
   }
 }
 
-module.exports = { bot, handleMessage, handleStart };
+module.exports = { bot, handleMessage, handleStart, getMessageFromUpdate };
