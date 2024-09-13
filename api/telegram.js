@@ -1,4 +1,4 @@
-const { bot, handleMessage, handleStart } = require('../src/bot');
+const { bot, handleMessage, handleStart, getMessageFromUpdate } = require('../src/bot');
 const { Redis } = require('@upstash/redis');
 const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = require('../src/config');
 
@@ -21,12 +21,13 @@ module.exports = async (req, res) => {
         if (!isProcessed) {
           await redis.set(key, 'true', { ex: 3600 }); // 设置1小时过期
           
-          if (update.message) {
-            console.log('Handling message:', JSON.stringify(update.message));
-            await handleMessage(update.message);
+          const message = getMessageFromUpdate(update);
+          if (message) {
+            console.log('Handling message:', JSON.stringify(message));
+            await handleMessage(update);
             console.log('Message handled successfully');
           } else {
-            console.log('Update does not contain a message');
+            console.log('Update does not contain a valid message');
           }
         } else {
           console.log('Duplicate update, skipping');
