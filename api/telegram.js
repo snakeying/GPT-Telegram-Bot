@@ -1,6 +1,11 @@
 const { bot, handleMessage, handleStart } = require('../src/bot');
+const { Redis } = require('@upstash/redis');
+const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = require('../src/config');
 
-const processedUpdates = new Set();
+const redis = new Redis({
+  url: UPSTASH_REDIS_REST_URL,
+  token: UPSTASH_REDIS_REST_TOKEN,
+});
 
 module.exports = async (req, res) => {
   console.log('Received webhook request:', JSON.stringify(req.body));
@@ -9,24 +14,25 @@ module.exports = async (req, res) => {
       const update = req.body;
       console.log('Processing update:', JSON.stringify(update));
       
-      if (update.update_id && !processedUpdates.has(update.update_id)) {
-        processedUpdates.add(update.update_id);
+      if (update.update_id) {
+        const key = `processed:${update.update_id}`;
+        const isProcessed = await redis.get(key);
         
-        if (update.message) {
-          console.log('Handling message:', JSON.stringify(update.message));
-          await handleMessage(update.message);
-          console.log('Message handled successfully');
+        if (!isProcessed) {
+          await redis.set(key, 'true', { ex: 3600 }); // 设置1小时过期
+          
+          if (update.message) {
+            console.log('Handling message:', JSON.stringify(update.message));
+            await handleMessage(update.message);
+            console.log('Message handled successfully');
+          } else {
+            console.log('Update does not contain a message');
+          }
         } else {
-          console.log('Update does not contain a message');
-        }
-        
-        // 清理旧的更新ID，以防止内存泄漏
-        if (processedUpdates.size > 1000) {
-          const oldestUpdateId = Math.min(...processedUpdates);
-          processedUpdates.delete(oldestUpdateId);
+          console.log('Duplicate update, skipping');
         }
       } else {
-        console.log('Duplicate update or missing update_id, skipping');
+        console.log('Missing update_id, skipping');
       }
     } else {
       console.log('Received non-POST request');
