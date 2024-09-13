@@ -1,20 +1,15 @@
-// 确保最早加载 node-telegram-bot-api
-const TelegramBot = require('node-telegram-bot-api'); 
-
+const TelegramBot = require('node-telegram-bot-api');
 const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS, DEFAULT_MODEL } = require('./config');
 const { generateResponse } = require('./api');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 const { generateImage, VALID_SIZES } = require('./generateImage');
 
-// 当前模型，初始值为默认模型
 let currentModel = DEFAULT_MODEL;
 
-// 创建 Telegram bot 实例
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
-  cancellation: true  // 启用取消 promise 的功能
+  cancellation: true
 });
 
-// 处理 /start 命令
 async function handleStart(msg) {
   const chatId = msg.chat.id;
   try {
@@ -25,12 +20,11 @@ async function handleStart(msg) {
   }
 }
 
-// 处理 /new 命令
 async function handleNew(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
   try {
-    await clearConversationHistory(userId);  // 清除当前对话历史
+    await clearConversationHistory(userId);
     await bot.sendMessage(chatId, `New conversation started with model ${currentModel}. Previous context has been cleared.`, {parse_mode: 'Markdown'});
     console.log('New conversation message sent successfully');
   } catch (error) {
@@ -38,7 +32,6 @@ async function handleNew(msg) {
   }
 }
 
-// 处理 /history 命令
 async function handleHistory(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
@@ -52,7 +45,6 @@ async function handleHistory(msg) {
   }
 }
 
-// 处理 /help 命令
 async function handleHelp(msg) {
   const chatId = msg.chat.id;
   try {
@@ -62,7 +54,6 @@ async function handleHelp(msg) {
   }
 }
 
-// 处理 /switchmodel 命令
 async function handleSwitchModel(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
@@ -76,18 +67,16 @@ async function handleSwitchModel(msg) {
   const modelName = args[1].trim();
   
   if (OPENAI_MODELS.includes(modelName)) {
-    currentModel = modelName;  // 切换模型
-    await clearConversationHistory(userId);  // 切换模型后清除对话记录
+    currentModel = modelName;
+    await clearConversationHistory(userId);
     await bot.sendMessage(chatId, `Model switched to: ${modelName}. Previous conversation has been cleared.`, {parse_mode: 'Markdown'});
   } else {
     await bot.sendMessage(chatId, `Invalid model name. Use /help to see available models.`, {parse_mode: 'Markdown'});
   }
 }
 
-// 新增：处理 /img 命令
 async function handleImageGeneration(msg) {
   const chatId = msg.chat.id;
-  const userId = msg.from.id;
   const args = msg.text.split(' ');
   args.shift(); // 移除 "/img" 命令
 
@@ -103,18 +92,23 @@ async function handleImageGeneration(msg) {
 
   try {
     await bot.sendChatAction(chatId, 'upload_photo');
+    console.log(`Generating image with prompt: "${prompt}" and size: ${size}`);
     const imageUrl = await generateImage(prompt, size);
-    await bot.sendPhoto(chatId, imageUrl, { caption: prompt });
-  } catch (error) {
-    if (error.message.includes('无效的图片大小')) {
-      await bot.sendMessage(chatId, `${error.message}\n有效的图片尺寸: ${VALID_SIZES.join(', ')}`);
+    console.log(`Image URL generated: ${imageUrl}`);
+    
+    if (imageUrl) {
+      console.log('Sending photo...');
+      await bot.sendPhoto(chatId, imageUrl, { caption: prompt });
+      console.log('Photo sent successfully');
     } else {
-      await bot.sendMessage(chatId, '生成图片时出错。请稍后再试。');
+      throw new Error('未能获取图片URL');
     }
+  } catch (error) {
+    console.error('图片生成或发送错误:', error);
+    await bot.sendMessage(chatId, `生成或发送图片时出错: ${error.message}`);
   }
 }
 
-// 处理普通消息
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
@@ -136,13 +130,13 @@ async function handleMessage(msg) {
     } else if (msg.text.startsWith('/img')) {
       await handleImageGeneration(msg);
     } else if (msg.text && !msg.text.startsWith('/')) {
-      await bot.sendChatAction(chatId, 'typing');  // Bot 正在输入的状态
+      await bot.sendChatAction(chatId, 'typing');
       const conversationHistory = await getConversationHistory(userId);
-      const response = await generateResponse(msg.text, conversationHistory, currentModel);  // 使用当前模型生成响应
+      const response = await generateResponse(msg.text, conversationHistory, currentModel);
       await addToConversationHistory(userId, msg.text, response);
       await bot.sendMessage(chatId, response, {parse_mode: 'Markdown'});
     } else {
-      console.log('Received non-text or command message');
+      console.log('Received non-text or unknown command message');
     }
   } catch (error) {
     console.error('Error in handleMessage:', error);
