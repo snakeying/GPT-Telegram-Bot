@@ -159,6 +159,8 @@ async function handleImageGeneration(msg) {
   }
 }
 
+const MAX_MESSAGE_LENGTH = 3900; // 设置一个安全的最大长度
+
 async function handleStreamMessage(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
@@ -168,50 +170,45 @@ async function handleStreamMessage(msg) {
   const stream = await generateStreamResponse(msg.text, conversationHistory, currentModel);
 
   let fullResponse = '';
+  let currentMessageContent = '';
   let messageSent = false;
   let messageId;
 
   for await (const chunk of stream) {
     const content = chunk.choices[0]?.delta?.content || '';
     fullResponse += content;
+    currentMessageContent += content;
 
-    if (fullResponse.length > 0 && !messageSent) {
-      const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
-      messageId = sentMsg.message_id;
-      messageSent = true;
-    } else if (messageSent && fullResponse.length % 20 === 0) {
-      try {
-        await bot.editMessageText(fullResponse, {
-          chat_id: chatId,
-          message_id: messageId,
-          parse_mode: 'Markdown'
-        });
-      } catch (error) {
-        console.error('Error editing message:', error);
-        // 如果编辑失败，可能是由于 Markdown 解析错误，尝试不使用 Markdown 发送
-        await bot.editMessageText(fullResponse, {
-          chat_id: chatId,
-          message_id: messageId
-        });
+    if (currentMessageContent.length >= MAX_MESSAGE_LENGTH || 
+        (fullResponse.length > 0 && !messageSent)) {
+      let messageToSend = currentMessageContent;
+      
+      // 在句号处截断
+      const lastPeriodIndex = currentMessageContent.lastIndexOf('.', MAX_MESSAGE_LENGTH);
+      if (lastPeriodIndex > 0) {
+        messageToSend = currentMessageContent.slice(0, lastPeriodIndex + 1);
       }
+
+      if (!messageSent) {
+        const sentMsg = await bot.sendMessage(chatId, messageToSend, {parse_mode: 'Markdown'});
+        messageId = sentMsg.message_id;
+        messageSent = true;
+      } else {
+        await bot.sendMessage(chatId, messageToSend, {parse_mode: 'Markdown'});
+      }
+
+      // 如果消息被截断，添加继续生成的提示
+      if (messageToSend.length < currentMessageContent.length) {
+        await bot.sendMessage(chatId, "请等待继续生成...");
+      }
+
+      currentMessageContent = currentMessageContent.slice(messageToSend.length);
     }
   }
 
-  if (messageSent) {
-    try {
-      await bot.editMessageText(fullResponse, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: 'Markdown'
-      });
-    } catch (error) {
-      console.error('Error editing final message:', error);
-      // 如果最终编辑失败，尝试不使用 Markdown 发送
-      await bot.editMessageText(fullResponse, {
-        chat_id: chatId,
-        message_id: messageId
-      });
-    }
+  // 发送剩余的内容（如果有的话）
+  if (currentMessageContent.length > 0) {
+    await bot.sendMessage(chatId, currentMessageContent, {parse_mode: 'Markdown'});
   }
 
   await addToConversationHistory(userId, msg.text, fullResponse);
