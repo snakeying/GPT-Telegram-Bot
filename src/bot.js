@@ -91,13 +91,14 @@ async function handleImageGeneration(msg) {
   }
 
   try {
+    console.log(`开始处理图片生成请求. 聊天ID: ${chatId}, 提示: "${prompt}", 尺寸: ${size}`);
     await bot.sendChatAction(chatId, 'upload_photo');
     console.log(`Generating image with prompt: "${prompt}" and size: ${size}`);
     const imageUrl = await generateImage(prompt, size);
     console.log(`Image URL generated: ${imageUrl}`);
     
     if (imageUrl) {
-      console.log('Sending photo...');
+      console.log(`开始发送图片. URL: ${imageUrl}`);
       await bot.sendPhoto(chatId, imageUrl, { caption: prompt });
       console.log('Photo sent successfully');
     } else {
@@ -105,7 +106,17 @@ async function handleImageGeneration(msg) {
     }
   } catch (error) {
     console.error('图片生成或发送错误:', error);
-    await bot.sendMessage(chatId, `生成或发送图片时出错: ${error.message}`);
+    let errorMessage = '生成或发送图片时出错。';
+    if (error.response) {
+      console.error('API 错误响应:', error.response.data);
+      errorMessage += ` API 错误: ${error.response.data.error.message}`;
+    } else if (error.request) {
+      console.error('没有收到 API 响应');
+      errorMessage += ' 未收到 API 响应。';
+    } else {
+      errorMessage += ` ${error.message}`;
+    }
+    await bot.sendMessage(chatId, errorMessage);
   }
 }
 
@@ -129,7 +140,6 @@ async function handleMessage(msg) {
       await handleSwitchModel(msg);
     } else if (msg.text.startsWith('/img')) {
       await handleImageGeneration(msg);
-      // 注意：我们不在这里添加图片生成命令到对话历史
     } else if (msg.text && !msg.text.startsWith('/')) {
       await bot.sendChatAction(chatId, 'typing');
       const conversationHistory = await getConversationHistory(userId);
