@@ -1,14 +1,14 @@
 const { OpenAI } = require('openai');
-const { OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL } = require('./config');
+const { OPENAI_API_KEY, OPENAI_BASE_URL } = require('./config');
 
 const client = new OpenAI({ 
   apiKey: OPENAI_API_KEY,
   baseURL: OPENAI_BASE_URL
 });
 
-async function generateResponse(prompt, conversationHistory) {
+async function generateResponse(prompt, conversationHistory, model) {
   console.log('Generating response for:', prompt);
-  console.log('Using model:', OPENAI_MODEL);
+  console.log('Using model:', model);
   console.log('Conversation history:', JSON.stringify(conversationHistory));
 
   try {
@@ -19,7 +19,7 @@ async function generateResponse(prompt, conversationHistory) {
     ];
 
     const response = await client.chat.completions.create({
-      model: OPENAI_MODEL,
+      model: model,
       messages: messages,
       temperature: 0.7,
     });
