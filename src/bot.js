@@ -3,11 +3,18 @@ const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS, DEFAULT_MODEL } = 
 const { generateResponse } = require('./api');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 const { generateImage, VALID_SIZES } = require('./generateImage');
+const { Redis } = require('@upstash/redis');
+const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = require('./config');
 
 let currentModel = DEFAULT_MODEL;
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
   cancellation: true
+});
+
+const redis = new Redis({
+  url: UPSTASH_REDIS_REST_URL,
+  token: UPSTASH_REDIS_REST_TOKEN,
 });
 
 async function handleStart(msg) {
@@ -77,6 +84,7 @@ async function handleSwitchModel(msg) {
 
 async function handleImageGeneration(msg) {
   const chatId = msg.chat.id;
+  const userId = msg.from.id;
   const args = msg.text.split(' ');
   args.shift(); // 移除 "/img" 命令
 
@@ -93,11 +101,27 @@ async function handleImageGeneration(msg) {
   try {
     console.log(`开始处理图片生成请求. 聊天ID: ${chatId}, 提示: "${prompt}", 尺寸: ${size}`);
     await bot.sendChatAction(chatId, 'upload_photo');
+    
+    // 生成唯一的请求ID
+    const requestId = `img_req:${userId}:${Date.now()}`;
+    
+    // 检查是否已经生成过图片
+    const existingImageUrl = await redis.get(requestId);
+    
+    if (existingImageUrl) {
+      console.log(`使用已生成的图片 URL: ${existingImageUrl}`);
+      await bot.sendPhoto(chatId, existingImageUrl, { caption: prompt });
+      return;
+    }
+    
     console.log(`Generating image with prompt: "${prompt}" and size: ${size}`);
     const imageUrl = await generateImage(prompt, size);
     console.log(`Image URL generated: ${imageUrl}`);
     
     if (imageUrl) {
+      // 存储生成的图片URL
+      await redis.set(requestId, imageUrl, { ex: 3600 }); // 1小时过期
+      
       console.log(`开始发送图片. URL: ${imageUrl}`);
       await bot.sendPhoto(chatId, imageUrl, { caption: prompt });
       console.log('Photo sent successfully');
