@@ -9,11 +9,7 @@ module.exports = async (req, res) => {
       
       if (update.message) {
         console.log('Handling message:', JSON.stringify(update.message));
-        if (update.message.text === '/start') {
-          await handleStart(update.message);
-        } else {
-          await handleMessage(update.message);
-        }
+        await handleMessage(update.message);
         console.log('Message handled successfully');
       } else {
         console.log('Update does not contain a message');
