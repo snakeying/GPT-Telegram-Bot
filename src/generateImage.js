@@ -12,7 +12,7 @@ async function generateImage(prompt, size = '1024x1024') {
   console.log(`开始生成图片. 提示: "${prompt}", 尺寸: ${size}`);
   if (!VALID_SIZES.includes(size)) {
     console.log(`无效的图片尺寸: ${size}`);
-    throw new Error(`无效的图片大小。请使用以下有效尺寸之一: ${VALID_SIZES.join(', ')}`);
+    throw new Error(`Invalid size. Please use one of the following valid sizes: ${VALID_SIZES.join(', ')}`);
   }
 
   try {
