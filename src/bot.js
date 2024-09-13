@@ -130,7 +130,9 @@ async function handleMessage(msg) {
       return;
     }
 
-    if (msg.text === '/new') {
+    if (msg.text === '/start') {
+      await handleStart(msg);
+    } else if (msg.text === '/new') {
       await handleNew(msg);
     } else if (msg.text === '/history') {
       await handleHistory(msg);
