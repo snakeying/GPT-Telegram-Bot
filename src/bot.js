@@ -129,6 +129,7 @@ async function handleMessage(msg) {
       await handleSwitchModel(msg);
     } else if (msg.text.startsWith('/img')) {
       await handleImageGeneration(msg);
+      // 注意：我们不在这里添加图片生成命令到对话历史
     } else if (msg.text && !msg.text.startsWith('/')) {
       await bot.sendChatAction(chatId, 'typing');
       const conversationHistory = await getConversationHistory(userId);
