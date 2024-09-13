@@ -1,5 +1,5 @@
 const { OpenAI } = require('openai');
-const { OPENAI_API_KEY, OPENAI_BASE_URL } = require('./config');
+const { OPENAI_API_KEY, OPENAI_BASE_URL, SYSTEM_INIT_MESSAGE, SYSTEM_INIT_MESSAGE_ROLE } = require('./config');
 
 const client = new OpenAI({ 
   apiKey: OPENAI_API_KEY,
@@ -13,7 +13,7 @@ async function generateResponse(prompt, conversationHistory, model) {
 
   try {
     const messages = [
-      { role: 'system', content: 'You are a helpful assistant.' },
+      { role: SYSTEM_INIT_MESSAGE_ROLE, content: SYSTEM_INIT_MESSAGE },
       ...conversationHistory,
       { role: 'user', content: prompt }
     ];
@@ -39,4 +39,31 @@ async function generateResponse(prompt, conversationHistory, model) {
   }
 }
 
-module.exports = { generateResponse };
+async function generateStreamResponse(prompt, conversationHistory, model) {
+  console.log('Generating stream response for:', prompt);
+  console.log('Using model:', model);
+  console.log('Conversation history:', JSON.stringify(conversationHistory));
+
+  try {
+    const messages = [
+      { role: SYSTEM_INIT_MESSAGE_ROLE, content: SYSTEM_INIT_MESSAGE },
+      ...conversationHistory,
+      { role: 'user', content: prompt }
+    ];
+
+    const stream = await client.chat.completions.create({
+      model: model,
+      messages: messages,
+      temperature: 0.7,
+      stream: true,
+    });
+
+    console.log('Received stream from OpenAI API');
+    return stream;
+  } catch (error) {
+    console.error('Error in generateStreamResponse function:', error);
+    throw new Error(`Failed to generate stream response: ${error.message}`);
+  }
+}
+
+module.exports = { generateResponse, generateStreamResponse };
