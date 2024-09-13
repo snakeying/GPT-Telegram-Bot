@@ -20,7 +20,8 @@ module.exports = async (req, res) => {
     res.status(200).send('OK');
   } catch (error) {
     console.error("Error in webhook handler:", error);
-    res.status(500).json({
+    // 即使出错，也发送 200 状态码，以防止 Telegram 重复发送请求
+    res.status(200).json({
       error: 'Internal Server Error',
       message: error.message,
       stack: error.stack
