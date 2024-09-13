@@ -14,6 +14,7 @@ async function generateImage(prompt, size = '1024x1024') {
   }
 
   try {
+    console.log(`Generating image with prompt: "${prompt}" and size: ${size}`);
     const response = await client.images.generate({
       model: DALL_E_MODEL,
       prompt: prompt,
@@ -21,6 +22,7 @@ async function generateImage(prompt, size = '1024x1024') {
       size: size
     });
 
+    console.log('Image generation successful');
     return response.data[0].url;
   } catch (error) {
     console.error('生成图片时出错:', error);
