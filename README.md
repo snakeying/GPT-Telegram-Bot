@@ -1,6 +1,6 @@
 # GPT-Telegram-Bot
 
-GPT-Telegram-Bot 是一个强大的 Telegram 机器人，集成了 OpenAI 的多个 API，可以处理文本对话、图像生成和图像分析等任务。这个机器人部署在 Vercel 上，使用 Upstash Redis 进行对话历史管理。
+GPT-Telegram-Bot 是一个强大的 Telegram 机器人，可调用 OpenAI 兼容的 API，进行文本对话、图像生成和图像分析等任务。这个机器人部署在 Vercel 上，使用 Upstash Redis 进行对话历史管理。
 
 ## 功能特性
 
