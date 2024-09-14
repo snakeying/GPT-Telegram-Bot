@@ -10,18 +10,8 @@ const client = new OpenAI({
   baseURL: OPENAI_BASE_URL
 });
 
-const SUPPORTED_EXTENSIONS = ['pdf', 'txt', 'docx', 'jpg', 'jpeg', 'png'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const SUPPORTED_MODELS = ['gpt-4o', 'gpt-4o-mini', 'gpt-4'];
-
-const extensionToMimeMap = {
-  pdf: 'application/pdf',
-  txt: 'text/plain',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  png: 'image/png'
-};
 
 async function handleFileUpload(fileInfo, prompt, model) {
   // Check file size
@@ -43,24 +33,19 @@ async function handleFileUpload(fileInfo, prompt, model) {
     const fileBuffer = fs.readFileSync(filePath);
     const detectedType = await fileType.fromBuffer(fileBuffer);
 
-    if (!detectedType || !SUPPORTED_EXTENSIONS.includes(detectedType.ext)) {
+    if (!detectedType) {
       fs.unlinkSync(filePath);
       return 'Invalid file type. The file content is not supported.';
     }
 
-    // Process file based on type
-    let content;
-    if (['jpg', 'jpeg', 'png'].includes(detectedType.ext)) {
-      content = fileBuffer.toString('base64');
-    } else {
-      content = fileBuffer.toString('utf8');
-    }
+    // Convert file to base64
+    const base64Content = fileBuffer.toString('base64');
 
     // Delete temporary file
     fs.unlinkSync(filePath);
 
     // Send to OpenAI for analysis
-    const response = await analyzeContent(content, prompt, model);
+    const response = await analyzeContent(base64Content, detectedType.mime, prompt, model);
 
     return response;
   } catch (error) {
@@ -85,14 +70,26 @@ async function downloadFile(filePath, destPath) {
   });
 }
 
-async function analyzeContent(content, prompt, model) {
+async function analyzeContent(base64Content, mimeType, prompt, model) {
   try {
     const response = await client.chat.completions.create({
       model: model,
       messages: [
         { role: SYSTEM_INIT_MESSAGE_ROLE, content: SYSTEM_INIT_MESSAGE },
-        { role: "user", content: `${prompt}\n\nFile content: ${content}` }
+        { 
+          role: "user", 
+          content: [
+            { type: "text", text: prompt },
+            { 
+              type: "image_url", 
+              image_url: {
+                url: `data:${mimeType};base64,${base64Content}`
+              }
+            }
+          ] 
+        }
       ],
+      max_tokens: 300,
     });
 
     return response.choices[0].message.content;
