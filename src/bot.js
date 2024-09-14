@@ -1,21 +1,15 @@
 const TelegramBot = require('node-telegram-bot-api');
-const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS, DEFAULT_MODEL } = require('./config');
-const { generateResponse, generateStreamResponse } = require('./api');
+const { TELEGRAM_BOT_TOKEN, WHITELISTED_USERS, OPENAI_MODELS, GOOGLE_MODELS, DEFAULT_MODEL, OPENAI_API_KEY } = require('./config');
+const { generateStreamResponse } = require('./api');
+const { generateGeminiStreamResponse } = require('./geminiApi');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 const { generateImage, VALID_SIZES } = require('./generateImage');
-const { Redis } = require('@upstash/redis');
-const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = require('./config');
 const { handleImageUpload } = require('./uploadHandler');
 
 let currentModel = DEFAULT_MODEL;
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
   cancellation: true
-});
-
-const redis = new Redis({
-  url: UPSTASH_REDIS_REST_URL,
-  token: UPSTASH_REDIS_REST_TOKEN,
 });
 
 function getMessageFromUpdate(update) {
@@ -78,18 +72,29 @@ async function handleSwitchModel(msg) {
 
   const modelName = args[1].trim();
   
-  if (OPENAI_MODELS.includes(modelName)) {
+  if (OPENAI_MODELS.includes(modelName) || GOOGLE_MODELS.includes(modelName)) {
     currentModel = modelName;
     await clearConversationHistory(userId);
     await bot.sendMessage(chatId, `Model switched to: ${modelName}. Previous conversation has been cleared.`, {parse_mode: 'Markdown'});
   } else {
-    await bot.sendMessage(chatId, `Invalid model name. Available models are: ${OPENAI_MODELS.join(', ')}`, {parse_mode: 'Markdown'});
+    const allModels = [...OPENAI_MODELS, ...GOOGLE_MODELS];
+    await bot.sendMessage(chatId, `Invalid model name. Available models are: ${allModels.join(', ')}`, {parse_mode: 'Markdown'});
   }
 }
 
 async function handleImageGeneration(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
+
+  if (!OPENAI_API_KEY) {
+    await bot.sendMessage(chatId, 'Image generation is not available. OpenAI API key is not configured.');
+    return;
+  }
+  if (!OPENAI_MODELS.includes(currentModel)) {
+    await bot.sendMessage(chatId, 'Image generation is only available with OpenAI models.');
+    return;
+  }
+
   const args = msg.text.split(' ');
   args.shift(); // 移除 "/img" 命令
 
@@ -166,60 +171,70 @@ async function handleStreamMessage(msg) {
   
   await bot.sendChatAction(chatId, 'typing');
   const conversationHistory = await getConversationHistory(userId);
-  const stream = await generateStreamResponse(msg.text, conversationHistory, currentModel);
+
+  let stream;
+  if (GOOGLE_MODELS.includes(currentModel)) {
+    stream = generateGeminiStreamResponse(msg.text, conversationHistory, currentModel);
+  } else {
+    stream = await generateStreamResponse(msg.text, conversationHistory, currentModel);
+  }
 
   let fullResponse = '';
   let messageSent = false;
   let messageId;
 
-  for await (const chunk of stream) {
-    const content = chunk.choices[0]?.delta?.content || '';
-    fullResponse += content;
+  try {
+    for await (const chunk of stream) {
+      fullResponse += chunk;
 
-    if (fullResponse.length > 0 && !messageSent) {
-      const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
-      messageId = sentMsg.message_id;
-      messageSent = true;
-    } else if (messageSent && fullResponse.length % 20 === 0) {
-      try {
-        await bot.editMessageText(fullResponse, {
-          chat_id: chatId,
-          message_id: messageId,
-          parse_mode: 'Markdown'
-        });
-      } catch (error) {
-        console.error('Error editing message:', error);
-        // 如果编辑失败，可能是由于 Markdown 解析错误，尝试不使用 Markdown 发送
-        await bot.editMessageText(fullResponse, {
-          chat_id: chatId,
-          message_id: messageId
-        });
+      if (fullResponse.length > 0 && !messageSent) {
+        const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
+        messageId = sentMsg.message_id;
+        messageSent = true;
+      } else if (messageSent && fullResponse.length % 20 === 0) {
+        try {
+          await bot.editMessageText(fullResponse, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown'
+          });
+        } catch (error) {
+          console.error('Error editing message:', error);
+          // 如果编辑失败，可能是由于 Markdown 解析错误，尝试不使用 Markdown 发送
+          await bot.editMessageText(fullResponse, {
+            chat_id: chatId,
+            message_id: messageId
+          });
+        }
       }
     }
-  }
 
-  if (messageSent) {
-    try {
+    if (messageSent) {
       await bot.editMessageText(fullResponse, {
         chat_id: chatId,
         message_id: messageId,
         parse_mode: 'Markdown'
       });
-    } catch (error) {
-      console.error('Error editing final message:', error);
-      // 如果最终编辑失败，尝试不使用 Markdown 发送
-      await bot.editMessageText(fullResponse, {
-        chat_id: chatId,
-        message_id: messageId
-      });
     }
-  }
 
-  await addToConversationHistory(userId, msg.text, fullResponse);
+    await addToConversationHistory(userId, msg.text, fullResponse);
+  } catch (error) {
+    console.error('Error in stream processing:', error);
+    await bot.sendMessage(chatId, 'Sorry, there was an error generating the response. Please try again later.', {parse_mode: 'Markdown'});
+  }
 }
 
 async function handleImageAnalysis(msg) {
   const chatId = msg.chat.id;
+
+  if (!OPENAI_API_KEY) {
+    await bot.sendMessage(chatId, 'Image analysis is not available. OpenAI API key is not configured.');
+    return;
+  }
+  if (!OPENAI_MODELS.includes(currentModel)) {
+    await bot.sendMessage(chatId, 'Image analysis is only available with OpenAI models.');
+    return;
+  }
   
   // Check if a photo is attached
   const photo = msg.photo && msg.photo[msg.photo.length - 1];
