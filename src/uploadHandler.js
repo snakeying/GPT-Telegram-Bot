@@ -29,19 +29,13 @@ async function handleFileUpload(fileInfo, prompt, model) {
     return 'File size exceeds the 10MB limit.';
   }
 
-  // Check file extension
-  const fileExtension = path.extname(fileInfo.file_name).toLowerCase().slice(1);
-  if (!SUPPORTED_EXTENSIONS.includes(fileExtension)) {
-    return `Unsupported file type. Supported types are: ${SUPPORTED_EXTENSIONS.join(', ')}`;
-  }
-
   // Check if the model is supported
   if (!SUPPORTED_MODELS.includes(model)) {
     return `Unsupported model. This feature only supports: ${SUPPORTED_MODELS.join(', ')}`;
   }
 
   // Download file
-  const filePath = `/tmp/${fileInfo.file_name}`;
+  const filePath = `/tmp/${fileInfo.file_id}`;
   await downloadFile(fileInfo.file_path, filePath);
 
   try {
@@ -49,14 +43,14 @@ async function handleFileUpload(fileInfo, prompt, model) {
     const fileBuffer = fs.readFileSync(filePath);
     const detectedType = await fileType.fromBuffer(fileBuffer);
 
-    if (!detectedType || detectedType.mime !== extensionToMimeMap[fileExtension]) {
+    if (!detectedType || !SUPPORTED_EXTENSIONS.includes(detectedType.ext)) {
       fs.unlinkSync(filePath);
-      return 'Invalid file type. The file content does not match its extension.';
+      return 'Invalid file type. The file content is not supported.';
     }
 
     // Process file based on type
     let content;
-    if (['jpg', 'jpeg', 'png'].includes(fileExtension)) {
+    if (['jpg', 'jpeg', 'png'].includes(detectedType.ext)) {
       content = fileBuffer.toString('base64');
     } else {
       content = fileBuffer.toString('utf8');
