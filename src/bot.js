@@ -17,7 +17,7 @@ const { getConversationHistory, addToConversationHistory, clearConversationHisto
 const { generateImage, VALID_SIZES } = require('./generateImage');
 const { handleImageUpload } = require('./uploadHandler');
 
-let currentModel = DEFAULT_MODEL;
+let currentModel = OPENAI_API_KEY ? DEFAULT_MODEL : null;
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
   cancellation: true
@@ -59,6 +59,11 @@ async function handleHistory(msg) {
   const userId = msg.from.id;
   try {
     const history = await getConversationHistory(userId);
+    console.log('Processed history:', JSON.stringify(history, null, 2));
+    if (!Array.isArray(history) || history.length === 0) {
+      await bot.sendMessage(chatId, 'No conversation history found.', {parse_mode: 'Markdown'});
+      return;
+    }
     const historyText = history.map(m => `${m.role}: ${m.content}`).join('\n\n');
     await bot.sendMessage(chatId, `Your conversation history:\n\n${historyText}`, {parse_mode: 'Markdown'});
   } catch (error) {
@@ -88,13 +93,16 @@ async function handleSwitchModel(msg) {
 
   const modelName = args[1].trim();
   
-  if (OPENAI_MODELS.includes(modelName) || GOOGLE_MODELS.includes(modelName)) {
+  if ((OPENAI_MODELS.includes(modelName) && OPENAI_API_KEY) || (GOOGLE_MODELS.includes(modelName) && GEMINI_API_KEY)) {
     currentModel = modelName;
     await clearConversationHistory(userId);
     await bot.sendMessage(chatId, `Model switched to: ${modelName}. Previous conversation has been cleared.`, {parse_mode: 'Markdown'});
   } else {
-    const allModels = [...OPENAI_MODELS, ...GOOGLE_MODELS];
-    await bot.sendMessage(chatId, `Invalid model name. Available models are: ${allModels.join(', ')}`, {parse_mode: 'Markdown'});
+    const availableModels = [
+      ...(OPENAI_API_KEY ? OPENAI_MODELS : []),
+      ...(GEMINI_API_KEY ? GOOGLE_MODELS : [])
+    ];
+    await bot.sendMessage(chatId, `Invalid model name or API key not set. Available models are: ${availableModels.join(', ')}`, {parse_mode: 'Markdown'});
   }
 }
 
@@ -185,18 +193,13 @@ async function handleStreamMessage(msg) {
   const conversationHistory = await getConversationHistory(userId);
 
   let stream;
-  if (GOOGLE_MODELS.includes(currentModel)) {
-    if (!GEMINI_API_KEY) {
-      await bot.sendMessage(chatId, 'Sorry, Gemini models are not available without Gemini API key.');
-      return;
-    }
+  if (GOOGLE_MODELS.includes(currentModel) && GEMINI_API_KEY) {
     stream = generateGeminiStreamResponse(msg.text, conversationHistory, currentModel);
-  } else {
-    if (!OPENAI_API_KEY) {
-      await bot.sendMessage(chatId, 'Sorry, OpenAI models are not available without OpenAI API key.');
-      return;
-    }
+  } else if (OPENAI_API_KEY) {
     stream = await generateStreamResponse(msg.text, conversationHistory, currentModel);
+  } else {
+    await bot.sendMessage(chatId, 'Sorry, no valid API key is available for the current model.');
+    return;
   }
 
   let fullResponse = '';
@@ -205,27 +208,31 @@ async function handleStreamMessage(msg) {
 
   try {
     for await (const chunk of stream) {
-      fullResponse += chunk;
+      if (typeof chunk === 'string') {
+        fullResponse += chunk;
 
-      if (fullResponse.length > 0 && !messageSent) {
-        const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
-        messageId = sentMsg.message_id;
-        messageSent = true;
-      } else if (messageSent && fullResponse.length % 20 === 0) {
-        try {
-          await bot.editMessageText(fullResponse, {
-            chat_id: chatId,
-            message_id: messageId,
-            parse_mode: 'Markdown'
-          });
-        } catch (error) {
-          console.error('Error editing message:', error);
-          // 如果编辑失败，可能是由于 Markdown 解析错误，尝试不使用 Markdown 发送
-          await bot.editMessageText(fullResponse, {
-            chat_id: chatId,
-            message_id: messageId
-          });
+        if (fullResponse.length > 0 && !messageSent) {
+          const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
+          messageId = sentMsg.message_id;
+          messageSent = true;
+        } else if (messageSent && fullResponse.length % 20 === 0) {
+          try {
+            await bot.editMessageText(fullResponse, {
+              chat_id: chatId,
+              message_id: messageId,
+              parse_mode: 'Markdown'
+            });
+          } catch (error) {
+            console.error('Error editing message:', error);
+            // 如果编辑失败，可能是由于 Markdown 解析错误，尝试不使用 Markdown 发送
+            await bot.editMessageText(fullResponse, {
+              chat_id: chatId,
+              message_id: messageId
+            });
+          }
         }
+      } else {
+        console.error('Unexpected chunk type:', typeof chunk, chunk);
       }
     }
 
