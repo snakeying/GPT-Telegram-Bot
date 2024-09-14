@@ -39,7 +39,7 @@ async function generateResponse(prompt, conversationHistory, model) {
   }
 }
 
-async function generateStreamResponse(prompt, conversationHistory, model) {
+async function* generateStreamResponse(prompt, conversationHistory, model) {
   console.log('Generating stream response for:', prompt);
   console.log('Using model:', model);
   console.log('Conversation history:', JSON.stringify(conversationHistory));
@@ -59,7 +59,12 @@ async function generateStreamResponse(prompt, conversationHistory, model) {
     });
 
     console.log('Received stream from OpenAI API');
-    return stream;
+    
+    for await (const chunk of stream) {
+      if (chunk.choices && chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content) {
+        yield chunk.choices[0].delta.content;
+      }
+    }
   } catch (error) {
     console.error('Error in generateStreamResponse function:', error);
     throw new Error(`Failed to generate stream response: ${error.message}`);
