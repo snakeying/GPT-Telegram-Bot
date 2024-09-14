@@ -5,6 +5,13 @@ const { generateGeminiStreamResponse } = require('./geminiApi');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 const { generateImage, VALID_SIZES } = require('./generateImage');
 const { handleImageUpload } = require('./uploadHandler');
+const { Redis } = require('@upstash/redis');
+const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = require('./config');
+
+const redis = new Redis({
+  url: UPSTASH_REDIS_REST_URL,
+  token: UPSTASH_REDIS_REST_TOKEN,
+});
 
 let currentModel = DEFAULT_MODEL;
 
