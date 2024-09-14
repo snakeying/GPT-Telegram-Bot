@@ -3,6 +3,8 @@ const path = require('path');
 const fileType = require('file-type');
 const axios = require('axios');
 const { OpenAI } = require('openai');
+const pdfParse = require('pdf-parse');
+const mammoth = require('mammoth');
 const { OPENAI_API_KEY, OPENAI_BASE_URL, SYSTEM_INIT_MESSAGE, SYSTEM_INIT_MESSAGE_ROLE } = require('./config');
 
 const client = new OpenAI({ 
@@ -14,39 +16,48 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const SUPPORTED_MODELS = ['gpt-4o', 'gpt-4o-mini', 'gpt-4'];
 
 async function handleFileUpload(fileInfo, prompt, model) {
-  // Check file size
   if (fileInfo.file_size > MAX_FILE_SIZE) {
     return 'File size exceeds the 10MB limit.';
   }
 
-  // Check if the model is supported
   if (!SUPPORTED_MODELS.includes(model)) {
     return `Unsupported model. This feature only supports: ${SUPPORTED_MODELS.join(', ')}`;
   }
 
-  // Download file
   const filePath = `/tmp/${fileInfo.file_id}`;
   await downloadFile(fileInfo.file_path, filePath);
 
   try {
-    // Verify file type
     const fileBuffer = fs.readFileSync(filePath);
     const detectedType = await fileType.fromBuffer(fileBuffer);
 
-    if (!detectedType) {
-      fs.unlinkSync(filePath);
-      return 'Invalid file type. The file content is not supported.';
+    let content;
+    let mimeType;
+
+    if (detectedType) {
+      if (detectedType.mime.startsWith('image/')) {
+        content = fileBuffer.toString('base64');
+        mimeType = detectedType.mime;
+      } else if (detectedType.ext === 'pdf') {
+        const pdfData = await pdfParse(fileBuffer);
+        content = pdfData.text;
+        mimeType = 'text/plain';
+      } else if (detectedType.ext === 'docx') {
+        const result = await mammoth.extractRawText({buffer: fileBuffer});
+        content = result.value;
+        mimeType = 'text/plain';
+      } else {
+        return 'Unsupported file type.';
+      }
+    } else {
+      // Assume it's a text file if type is not detected
+      content = fileBuffer.toString('utf8');
+      mimeType = 'text/plain';
     }
 
-    // Convert file to base64
-    const base64Content = fileBuffer.toString('base64');
-
-    // Delete temporary file
     fs.unlinkSync(filePath);
 
-    // Send to OpenAI for analysis
-    const response = await analyzeContent(base64Content, detectedType.mime, prompt, model);
-
+    const response = await analyzeContent(content, mimeType, prompt, model);
     return response;
   } catch (error) {
     console.error('Error in file processing:', error);
@@ -70,11 +81,11 @@ async function downloadFile(filePath, destPath) {
   });
 }
 
-async function analyzeContent(base64Content, mimeType, prompt, model) {
+async function analyzeContent(content, mimeType, prompt, model) {
   try {
-    const response = await client.chat.completions.create({
-      model: model,
-      messages: [
+    let messages;
+    if (mimeType.startsWith('image/')) {
+      messages = [
         { role: SYSTEM_INIT_MESSAGE_ROLE, content: SYSTEM_INIT_MESSAGE },
         { 
           role: "user", 
@@ -83,12 +94,22 @@ async function analyzeContent(base64Content, mimeType, prompt, model) {
             { 
               type: "image_url", 
               image_url: {
-                url: `data:${mimeType};base64,${base64Content}`
+                url: `data:${mimeType};base64,${content}`
               }
             }
           ] 
         }
-      ],
+      ];
+    } else {
+      messages = [
+        { role: SYSTEM_INIT_MESSAGE_ROLE, content: SYSTEM_INIT_MESSAGE },
+        { role: "user", content: `${prompt}\n\nFile content: ${content}` }
+      ];
+    }
+
+    const response = await client.chat.completions.create({
+      model: model,
+      messages: messages,
       max_tokens: 300,
     });
 
