@@ -5,7 +5,7 @@ const { getConversationHistory, addToConversationHistory, clearConversationHisto
 const { generateImage, VALID_SIZES } = require('./generateImage');
 const { Redis } = require('@upstash/redis');
 const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = require('./config');
-const { handleFileUpload } = require('./uploadHandler');
+const { handleImageUpload } = require('./uploadHandler');
 
 let currentModel = DEFAULT_MODEL;
 
@@ -218,34 +218,34 @@ async function handleStreamMessage(msg) {
   await addToConversationHistory(userId, msg.text, fullResponse);
 }
 
-async function handleFileAnalysis(msg) {
+async function handleImageAnalysis(msg) {
   const chatId = msg.chat.id;
   
-  // Check if a file is attached
-  const file = msg.document || (msg.photo && msg.photo[msg.photo.length - 1]);
-  if (!file) {
-    await bot.sendMessage(chatId, 'Please attach a file or photo to analyze.');
+  // Check if a photo is attached
+  const photo = msg.photo && msg.photo[msg.photo.length - 1];
+  if (!photo) {
+    await bot.sendMessage(chatId, 'Please attach a photo to analyze.');
     return;
   }
 
   // Get the prompt from the caption or wait for it
   let prompt = msg.caption;
   if (!prompt) {
-    await bot.sendMessage(chatId, 'Please provide a prompt for file analysis.');
+    await bot.sendMessage(chatId, 'Please provide a prompt for image analysis.');
     // Wait for the next message to be the prompt
     const promptMsg = await new Promise(resolve => bot.once('message', resolve));
     prompt = promptMsg.text;
   }
 
-  await bot.sendMessage(chatId, 'Analyzing your file. This may take a moment...');
+  await bot.sendMessage(chatId, 'Analyzing your image. This may take a moment...');
 
   try {
-    const fileInfo = await bot.getFile(file.file_id);
-    const result = await handleFileUpload(fileInfo, prompt, currentModel);
+    const fileInfo = await bot.getFile(photo.file_id);
+    const result = await handleImageUpload(fileInfo, prompt, currentModel);
     await bot.sendMessage(chatId, result, { parse_mode: 'Markdown' });
   } catch (error) {
-    console.error('Error in file analysis:', error);
-    await bot.sendMessage(chatId, 'An error occurred while analyzing the file. Please try again.');
+    console.error('Error in image analysis:', error);
+    await bot.sendMessage(chatId, 'An error occurred while analyzing the image. Please try again.');
   }
 }
 
@@ -265,8 +265,8 @@ async function handleMessage(update) {
       return;
     }
 
-    if (msg.document || msg.photo) {
-      await handleFileAnalysis(msg);
+    if (msg.photo) {
+      await handleImageAnalysis(msg);
     } else if (msg.text) {
       if (msg.text === '/start') {
         await handleStart(msg);
@@ -285,7 +285,7 @@ async function handleMessage(update) {
       }
     } else {
       console.log('Received unsupported message type');
-      await bot.sendMessage(chatId, 'Sorry, I can only process text messages, documents, and photos.', {parse_mode: 'Markdown'});
+      await bot.sendMessage(chatId, 'Sorry, I can only process text messages and photos.', {parse_mode: 'Markdown'});
     }
   } catch (error) {
     console.error('Error in handleMessage:', error);
