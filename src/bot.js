@@ -11,7 +11,7 @@ const {
   UPSTASH_REDIS_REST_URL,
   UPSTASH_REDIS_REST_TOKEN
 } = require('./config');
-const { generateStreamResponse } = require('./api');
+const { generateResponse, generateStreamResponse } = require('./api');
 const { generateGeminiStreamResponse } = require('./geminiApi');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 const { generateImage, VALID_SIZES } = require('./generateImage');
@@ -196,7 +196,7 @@ async function handleStreamMessage(msg) {
   if (GOOGLE_MODELS.includes(currentModel) && GEMINI_API_KEY) {
     stream = generateGeminiStreamResponse(msg.text, conversationHistory, currentModel);
   } else if (OPENAI_API_KEY) {
-    stream = await generateStreamResponse(msg.text, conversationHistory, currentModel);
+    stream = generateStreamResponse(msg.text, conversationHistory, currentModel);
   } else {
     await bot.sendMessage(chatId, 'Sorry, no valid API key is available for the current model.');
     return;
@@ -208,31 +208,27 @@ async function handleStreamMessage(msg) {
 
   try {
     for await (const chunk of stream) {
-      if (typeof chunk === 'string') {
-        fullResponse += chunk;
+      fullResponse += chunk;
 
-        if (fullResponse.length > 0 && !messageSent) {
-          const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
-          messageId = sentMsg.message_id;
-          messageSent = true;
-        } else if (messageSent && fullResponse.length % 20 === 0) {
-          try {
-            await bot.editMessageText(fullResponse, {
-              chat_id: chatId,
-              message_id: messageId,
-              parse_mode: 'Markdown'
-            });
-          } catch (error) {
-            console.error('Error editing message:', error);
-            // 如果编辑失败，可能是由于 Markdown 解析错误，尝试不使用 Markdown 发送
-            await bot.editMessageText(fullResponse, {
-              chat_id: chatId,
-              message_id: messageId
-            });
-          }
+      if (fullResponse.length > 0 && !messageSent) {
+        const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
+        messageId = sentMsg.message_id;
+        messageSent = true;
+      } else if (messageSent && fullResponse.length % 20 === 0) {
+        try {
+          await bot.editMessageText(fullResponse, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown'
+          });
+        } catch (error) {
+          console.error('Error editing message:', error);
+          // 如果编辑失败，可能是由于 Markdown 解析错误，尝试不使用 Markdown 发送
+          await bot.editMessageText(fullResponse, {
+            chat_id: chatId,
+            message_id: messageId
+          });
         }
-      } else {
-        console.error('Unexpected chunk type:', typeof chunk, chunk);
       }
     }
 
