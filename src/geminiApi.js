@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { GEMINI_API_KEY, SYSTEM_INIT_MESSAGE, SYSTEM_INIT_MESSAGE_ROLE } = require('./config');
+const { GEMINI_API_KEY, GEMINI_ENDPOINT, SYSTEM_INIT_MESSAGE, SYSTEM_INIT_MESSAGE_ROLE } = require('./config');
 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY, GEMINI_ENDPOINT);
 
 async function* generateGeminiStreamResponse(prompt, conversationHistory, model) {
   try {
@@ -10,7 +10,7 @@ async function* generateGeminiStreamResponse(prompt, conversationHistory, model)
     const chat = geminiModel.startChat({
       history: [
         {
-          role: SYSTEM_INIT_MESSAGE_ROLE,
+          role: SYSTEM_INIT_MESSAGE_ROLE === 'system' ? 'user' : SYSTEM_INIT_MESSAGE_ROLE,
           parts: [{ text: SYSTEM_INIT_MESSAGE }],
         },
         ...conversationHistory.map(msg => ({
