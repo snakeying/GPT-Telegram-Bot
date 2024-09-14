@@ -224,7 +224,7 @@ async function handleFileAnalysis(msg) {
   // Check if a file is attached
   const file = msg.document || (msg.photo && msg.photo[msg.photo.length - 1]);
   if (!file) {
-    await bot.sendMessage(chatId, 'Please attach a file to analyze.');
+    await bot.sendMessage(chatId, 'Please attach a file or photo to analyze.');
     return;
   }
 
@@ -265,24 +265,27 @@ async function handleMessage(update) {
       return;
     }
 
-    if (msg.text === '/start') {
-      await handleStart(msg);
-    } else if (msg.text === '/new') {
-      await handleNew(msg);
-    } else if (msg.text === '/history') {
-      await handleHistory(msg);
-    } else if (msg.text === '/help') {
-      await handleHelp(msg);
-    } else if (msg.text.startsWith('/switchmodel')) {
-      await handleSwitchModel(msg);
-    } else if (msg.text.startsWith('/img')) {
-      await handleImageGeneration(msg);
-    } else if (msg.document || msg.photo) {
+    if (msg.document || msg.photo) {
       await handleFileAnalysis(msg);
-    } else if (msg.text && !msg.text.startsWith('/')) {
-      await handleStreamMessage(msg);
+    } else if (msg.text) {
+      if (msg.text === '/start') {
+        await handleStart(msg);
+      } else if (msg.text === '/new') {
+        await handleNew(msg);
+      } else if (msg.text === '/history') {
+        await handleHistory(msg);
+      } else if (msg.text === '/help') {
+        await handleHelp(msg);
+      } else if (msg.text.startsWith('/switchmodel')) {
+        await handleSwitchModel(msg);
+      } else if (msg.text.startsWith('/img')) {
+        await handleImageGeneration(msg);
+      } else {
+        await handleStreamMessage(msg);
+      }
     } else {
-      console.log('Received non-text or unknown command message');
+      console.log('Received unsupported message type');
+      await bot.sendMessage(chatId, 'Sorry, I can only process text messages, documents, and photos.', {parse_mode: 'Markdown'});
     }
   } catch (error) {
     console.error('Error in handleMessage:', error);
