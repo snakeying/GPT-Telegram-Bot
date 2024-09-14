@@ -5,6 +5,7 @@ const { getConversationHistory, addToConversationHistory, clearConversationHisto
 const { generateImage, VALID_SIZES } = require('./generateImage');
 const { Redis } = require('@upstash/redis');
 const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = require('./config');
+const { handleFileUpload } = require('./uploadHandler');
 
 let currentModel = DEFAULT_MODEL;
 
@@ -217,6 +218,37 @@ async function handleStreamMessage(msg) {
   await addToConversationHistory(userId, msg.text, fullResponse);
 }
 
+async function handleFileAnalysis(msg) {
+  const chatId = msg.chat.id;
+  
+  // Check if a file is attached
+  const file = msg.document || (msg.photo && msg.photo[msg.photo.length - 1]);
+  if (!file) {
+    await bot.sendMessage(chatId, 'Please attach a file to analyze.');
+    return;
+  }
+
+  // Get the prompt from the caption or wait for it
+  let prompt = msg.caption;
+  if (!prompt) {
+    await bot.sendMessage(chatId, 'Please provide a prompt for file analysis.');
+    // Wait for the next message to be the prompt
+    const promptMsg = await new Promise(resolve => bot.once('message', resolve));
+    prompt = promptMsg.text;
+  }
+
+  await bot.sendMessage(chatId, 'Analyzing your file. This may take a moment...');
+
+  try {
+    const fileInfo = await bot.getFile(file.file_id);
+    const result = await handleFileUpload(fileInfo, prompt, currentModel);
+    await bot.sendMessage(chatId, result, { parse_mode: 'Markdown' });
+  } catch (error) {
+    console.error('Error in file analysis:', error);
+    await bot.sendMessage(chatId, 'An error occurred while analyzing the file. Please try again.');
+  }
+}
+
 async function handleMessage(update) {
   const msg = getMessageFromUpdate(update);
   if (!msg) {
@@ -245,6 +277,8 @@ async function handleMessage(update) {
       await handleSwitchModel(msg);
     } else if (msg.text.startsWith('/img')) {
       await handleImageGeneration(msg);
+    } else if (msg.document || msg.photo) {
+      await handleFileAnalysis(msg);
     } else if (msg.text && !msg.text.startsWith('/')) {
       await handleStreamMessage(msg);
     } else {
