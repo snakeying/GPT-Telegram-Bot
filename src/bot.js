@@ -44,7 +44,7 @@ function getMessageFromUpdate(update) {
 async function handleStart(msg) {
   const chatId = msg.chat.id;
   try {
-    await bot.sendMessage(chatId, `Welcome! The current model is ${currentModel}. Send me a message and I will generate a response using AI.`, {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, `Hi~👋 你目前正在使用的模型是 ${currentModel}。请问我可以为你做些什么呢？`, {parse_mode: 'Markdown'});
     console.log('Start message sent successfully');
   } catch (error) {
     console.error('Error sending start message:', error);
@@ -56,7 +56,7 @@ async function handleNew(msg) {
   const userId = msg.from.id;
   try {
     await clearConversationHistory(userId);
-    await bot.sendMessage(chatId, `New conversation started with model ${currentModel}. Previous context has been cleared.`, {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, `好的,让我们重新开始吧！你现在使用的模型是 ${currentModel}。之前所有的对话记录已被清除了哦`, {parse_mode: 'Markdown'});
     console.log('New conversation message sent successfully');
   } catch (error) {
     console.error('Error handling new conversation:', error);
@@ -70,11 +70,11 @@ async function handleHistory(msg) {
     const history = await getConversationHistory(userId);
     console.log('Processed history:', JSON.stringify(history, null, 2));
     if (!Array.isArray(history) || history.length === 0) {
-      await bot.sendMessage(chatId, 'No conversation history found.', {parse_mode: 'Markdown'});
+      await bot.sendMessage(chatId, '哎呀,没有找到任何对话历史的记录呢。', {parse_mode: 'Markdown'});
       return;
     }
     const historyText = history.map(m => `${m.role}: ${m.content}`).join('\n\n');
-    await bot.sendMessage(chatId, `Your conversation history:\n\n${historyText}`, {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, `以下是你的对话记录:\n\n${historyText}`, {parse_mode: 'Markdown'});
   } catch (error) {
     console.error('Error retrieving conversation history:', error);
     await bot.sendMessage(chatId, 'Sorry, there was an error retrieving your conversation history.', {parse_mode: 'Markdown'});
@@ -128,7 +128,7 @@ async function handleSwitchModel(msg) {
   const args = msg.text.split(' ');
   
   if (args.length < 2) {
-    await bot.sendMessage(chatId, 'Please provide a model name to switch to.', {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, '请提供一个要切换的模型名称。', {parse_mode: 'Markdown'});
     return;
   }
 
@@ -141,7 +141,7 @@ async function handleSwitchModel(msg) {
       (AZURE_OPENAI_MODELS.includes(modelName) && AZURE_OPENAI_API_KEY)) {
     currentModel = modelName;
     await clearConversationHistory(userId);
-    await bot.sendMessage(chatId, `Model switched to: ${modelName}. Previous conversation has been cleared.`, {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, `模型已切换到: ${modelName}。之前的对话记录已经清除了哦。`, {parse_mode: 'Markdown'});
   } else {
     const availableModels = [
       ...(OPENAI_API_KEY ? OPENAI_MODELS : []),
@@ -150,7 +150,7 @@ async function handleSwitchModel(msg) {
       ...(CLAUDE_API_KEY ? CLAUDE_MODELS : []),
       ...(AZURE_OPENAI_API_KEY ? AZURE_OPENAI_MODELS : [])
     ];
-    await bot.sendMessage(chatId, `Invalid model name or API key not set. Available models are: ${availableModels.join(', ')}`, {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, `哎呀,模型名称无效或者API密钥未设置。可用的模型有: ${availableModels.join(', ')}`, {parse_mode: 'Markdown'});
   }
 }
 
@@ -159,7 +159,7 @@ async function handleImageGeneration(msg) {
   const userId = msg.from.id;
 
   if (!OPENAI_API_KEY) {
-    await bot.sendMessage(chatId, 'Sorry, image generation is not available without OpenAI API key.');
+    await bot.sendMessage(chatId, '抱歉,因为你没有设置OpenAI API密钥,无法生成图片。');
     return;
   }
 
@@ -247,7 +247,7 @@ async function handleStreamMessage(msg) {
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Groq processing:', error);
-      await bot.sendMessage(chatId, 'Sorry, there was an error generating the response. Please try again later.', {parse_mode: 'Markdown'});
+      await bot.sendMessage(chatId, '抱歉,生成回复时出现了错误。请稍后再试。', {parse_mode: 'Markdown'});
     }
     return;
   }
@@ -259,7 +259,7 @@ async function handleStreamMessage(msg) {
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Gemini processing:', error);
-      await bot.sendMessage(chatId, 'Sorry, there was an error generating the response. Please try again later.', {parse_mode: 'Markdown'});
+      await bot.sendMessage(chatId, '抱歉,生成回复时出现了错误。请稍后再试。', {parse_mode: 'Markdown'});
     }
     return;
   }
@@ -272,7 +272,7 @@ async function handleStreamMessage(msg) {
   } else if (AZURE_OPENAI_API_KEY && AZURE_OPENAI_MODELS.includes(currentModel)) {
     stream = generateAzureOpenAIResponse(msg.text, conversationHistory, currentModel);
   } else {
-    await bot.sendMessage(chatId, 'Sorry, no valid API key is available for the current model.');
+    await bot.sendMessage(chatId, '抱歉,当前模型没有可用的API密钥。');
     return;
   }
 
@@ -316,7 +316,7 @@ async function handleStreamMessage(msg) {
     await addToConversationHistory(userId, msg.text, fullResponse);
   } catch (error) {
     console.error('Error in stream processing:', error);
-    await bot.sendMessage(chatId, 'Sorry, there was an error generating the response. Please try again later.', {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, '抱歉,生成回复时出现了错误。请稍后再试。', {parse_mode: 'Markdown'});
   }
 }
 
@@ -325,27 +325,27 @@ async function handleImageAnalysis(msg) {
     const userId = msg.from.id;
   
     if (!OPENAI_API_KEY) {
-      await bot.sendMessage(chatId, 'Sorry, image analysis is not available without OpenAI API key.');
+      await bot.sendMessage(chatId, '抱歉,你没有设置OpenAI API密钥,无法进行图片分析。');
       return;
     }
   
     // Check if a photo is attached
     const photo = msg.photo && msg.photo[msg.photo.length - 1];
     if (!photo) {
-      await bot.sendMessage(chatId, 'Please attach a photo to analyze.');
+      await bot.sendMessage(chatId, '请附上一张要分析的图片。');
       return;
     }
   
     // Get the prompt from the caption or wait for it
     let prompt = msg.caption;
     if (!prompt) {
-      await bot.sendMessage(chatId, 'Please provide a prompt for image analysis.');
+      await bot.sendMessage(chatId, '请为图片分析提供一个描述或问题。');
       // Wait for the next message to be the prompt
       const promptMsg = await new Promise(resolve => bot.once('message', resolve));
       prompt = promptMsg.text;
     }
   
-    await bot.sendMessage(chatId, 'Analyzing your image. This may take a moment...');
+    await bot.sendMessage(chatId, '正在分析你的图片,请稍等片刻...');
   
     try {
       const fileInfo = await bot.getFile(photo.file_id);
@@ -393,11 +393,11 @@ async function handleMessage(update) {
       }
     } else {
       console.log('Received unsupported message type');
-      await bot.sendMessage(chatId, 'Sorry, I can only process text messages and photos.', {parse_mode: 'Markdown'});
+      await bot.sendMessage(chatId, '抱歉,我只能处理文字消息和图片，请检查你的文件。', {parse_mode: 'Markdown'});
     }
   } catch (error) {
     console.error('Error in handleMessage:', error);
-    await bot.sendMessage(chatId, 'Sorry, there was an error processing your message. Please try again later.', {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, '抱歉,处理你的消息时出现了错误。请稍后再试。', {parse_mode: 'Markdown'});
   }
 }
 
