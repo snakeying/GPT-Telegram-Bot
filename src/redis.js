@@ -1,5 +1,5 @@
 const { Redis } = require('@upstash/redis');
-const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = require('./config');
+const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, MAX_HISTORY_LENGTH } = require('./config');
 
 const redis = new Redis({
   url: UPSTASH_REDIS_REST_URL,
@@ -34,9 +34,9 @@ async function addToConversationHistory(userId, message, response) {
     history.push({ role: 'user', content: message });
     history.push({ role: 'assistant', content: response });
     
-    // Keep only the last 10 messages (5 exchanges)
-    if (history.length > 10) {
-      history.splice(0, history.length - 10);
+    // Keep only the last MAX_HISTORY_LENGTH messages
+    if (history.length > MAX_HISTORY_LENGTH) {
+      history.splice(0, history.length - MAX_HISTORY_LENGTH);
     }
     
     const jsonHistory = JSON.stringify(history);
