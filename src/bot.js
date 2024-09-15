@@ -84,7 +84,39 @@ async function handleHistory(msg) {
 async function handleHelp(msg) {
   const chatId = msg.chat.id;
   try {
-    await bot.sendMessage(chatId, '等待补充', {parse_mode: 'Markdown'});
+    const helpMessage = `
+嘿，欢迎使用你的专属助手机器人！👋 这里是使用指南：
+
+🚀 基本命令：
+/start - 和我打个招呼，开始聊天吧
+/new - 想要重新开始？这个命令可以清除之前的对话记录
+/history - 回顾一下我们之前聊了什么
+/switchmodel [模型名称] - 换个模型聊聊？
+/img [描述] [尺寸] - 来，让我为你画张图！
+
+💬 日常聊天：
+直接发消息给我就行，我会用当前的 AI 模型回复你哦~
+
+🎨 生成图片：
+- 使用 /img 命令，后面跟上你想要的图片描述
+- 想要特定尺寸？可以在最后加上尺寸大小（比如：1024x1024, 1792x1024, 1024x1792）
+- 举个例子：/img 一只可爱的小猫咪在阳光下玩耍 1024x1024
+
+🔍 图片分析：
+- 发送一张图片给我（带不带文字描述都行）
+- 我会仔细分析，然后告诉你我看到了什么
+
+🤖 当前可用的 AI 模型：
+${OPENAI_MODELS.length > 0 ? '- OpenAI：' + OPENAI_MODELS.join(', ') + '\n' : ''}${GOOGLE_MODELS.length > 0 ? '- Google：' + GOOGLE_MODELS.join(', ') + '\n' : ''}${GROQ_MODELS.length > 0 ? '- Groq：' + GROQ_MODELS.join(', ') + '\n' : ''}${CLAUDE_MODELS.length > 0 ? '- Claude：' + CLAUDE_MODELS.join(', ') + '\n' : ''}${AZURE_OPENAI_MODELS.length > 0 ? '- Azure OpenAI：' + AZURE_OPENAI_MODELS.join(', ') + '\n' : ''}
+😎 目前正在使用的模型：${currentModel}
+
+有什么问题或建议？随时告诉我的管理员~
+
+来吧，让我们开始有趣的对话吧！✨
+    `;
+
+    await bot.sendMessage(chatId, helpMessage, {parse_mode: 'Markdown'});
+    console.log('Help message sent successfully');
   } catch (error) {
     console.error('Error sending help message:', error);
   }
