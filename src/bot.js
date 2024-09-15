@@ -6,16 +6,19 @@ const {
   OPENAI_MODELS, 
   GOOGLE_MODELS,
   GROQ_MODELS,
+  CLAUDE_MODELS,
   DEFAULT_MODEL,
   OPENAI_API_KEY,
   GEMINI_API_KEY,
   GROQ_API_KEY,
+  CLAUDE_API_KEY,
   UPSTASH_REDIS_REST_URL,
   UPSTASH_REDIS_REST_TOKEN
 } = require('./config');
 const { generateResponse, generateStreamResponse } = require('./api');
 const { generateGeminiResponse } = require('./geminiApi');
 const { generateGroqResponse } = require('./groqapi');
+const { generateClaudeResponse } = require('./claude');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 const { generateImage, VALID_SIZES } = require('./generateImage');
 const { handleImageUpload } = require('./uploadHandler');
@@ -98,7 +101,8 @@ async function handleSwitchModel(msg) {
   
   if ((OPENAI_MODELS.includes(modelName) && OPENAI_API_KEY) || 
       (GOOGLE_MODELS.includes(modelName) && GEMINI_API_KEY) ||
-      (GROQ_MODELS.includes(modelName) && GROQ_API_KEY)) {
+      (GROQ_MODELS.includes(modelName) && GROQ_API_KEY) ||
+      (CLAUDE_MODELS.includes(modelName) && CLAUDE_API_KEY)) {
     currentModel = modelName;
     await clearConversationHistory(userId);
     await bot.sendMessage(chatId, `Model switched to: ${modelName}. Previous conversation has been cleared.`, {parse_mode: 'Markdown'});
@@ -106,7 +110,8 @@ async function handleSwitchModel(msg) {
     const availableModels = [
       ...(OPENAI_API_KEY ? OPENAI_MODELS : []),
       ...(GEMINI_API_KEY ? GOOGLE_MODELS : []),
-      ...(GROQ_API_KEY ? GROQ_MODELS : [])
+      ...(GROQ_API_KEY ? GROQ_MODELS : []),
+      ...(CLAUDE_API_KEY ? CLAUDE_MODELS : [])
     ];
     await bot.sendMessage(chatId, `Invalid model name or API key not set. Available models are: ${availableModels.join(', ')}`, {parse_mode: 'Markdown'});
   }
@@ -223,8 +228,10 @@ async function handleStreamMessage(msg) {
   }
 
   let stream;
-  if (OPENAI_API_KEY) {
+  if (OPENAI_API_KEY && OPENAI_MODELS.includes(currentModel)) {
     stream = generateStreamResponse(msg.text, conversationHistory, currentModel);
+  } else if (CLAUDE_API_KEY && CLAUDE_MODELS.includes(currentModel)) {
+    stream = generateClaudeResponse(msg.text, conversationHistory, currentModel);
   } else {
     await bot.sendMessage(chatId, 'Sorry, no valid API key is available for the current model.');
     return;
