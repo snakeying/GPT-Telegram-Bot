@@ -3,6 +3,11 @@ const { GEMINI_API_KEY, GEMINI_ENDPOINT, SYSTEM_INIT_MESSAGE, SYSTEM_INIT_MESSAG
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY, GEMINI_ENDPOINT);
 
+function escapeMarkdown(text) {
+  const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+  return specialChars.reduce((acc, char) => acc.replace(new RegExp('\\' + char, 'g'), '\\' + char), text);
+}
+
 async function* generateGeminiStreamResponse(prompt, conversationHistory, model) {
   try {
     const geminiModel = genAI.getGenerativeModel({ model: model });
@@ -25,7 +30,7 @@ async function* generateGeminiStreamResponse(prompt, conversationHistory, model)
     for await (const chunk of result.stream) {
       const chunkText = chunk.text();
       if (chunkText) {
-        yield chunkText;
+        yield escapeMarkdown(chunkText);
       }
     }
   } catch (error) {
