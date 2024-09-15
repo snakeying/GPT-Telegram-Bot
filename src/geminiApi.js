@@ -3,9 +3,24 @@ const { GEMINI_API_KEY, GEMINI_ENDPOINT, SYSTEM_INIT_MESSAGE, SYSTEM_INIT_MESSAG
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY, GEMINI_ENDPOINT);
 
-function escapeMarkdown(text) {
-  const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
-  return specialChars.reduce((acc, char) => acc.replace(new RegExp('\\' + char, 'g'), '\\' + char), text);
+function sanitizeMarkdown(text) {
+  // 只转义未配对的特殊字符
+  const specialChars = ['*', '_', '`', '['];
+  let sanitized = text;
+  
+  specialChars.forEach(char => {
+    const regex = new RegExp(`(?<!\\${char})\\${char}(?!\\${char})`, 'g');
+    sanitized = sanitized.replace(regex, `\\${char}`);
+  });
+
+  // 处理可能导致问题的其他字符
+  sanitized = sanitized
+    .replace(/\]/g, '\\]')
+    .replace(/\)/g, '\\)')
+    .replace(/>/g, '\\>')
+    .replace(/#/g, '\\#');
+
+  return sanitized;
 }
 
 async function* generateGeminiStreamResponse(prompt, conversationHistory, model) {
@@ -30,7 +45,7 @@ async function* generateGeminiStreamResponse(prompt, conversationHistory, model)
     for await (const chunk of result.stream) {
       const chunkText = chunk.text();
       if (chunkText) {
-        yield escapeMarkdown(chunkText);
+        yield sanitizeMarkdown(chunkText);
       }
     }
   } catch (error) {
