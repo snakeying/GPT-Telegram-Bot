@@ -24,7 +24,7 @@ GPT-Telegram-Bot 是一个可调用 OpenAI 兼容的 API，进行文本对话、
 ### 步骤 1: 克隆仓库
 
 ```bash
-git clone https://github.com/your-username/GPT-Telegram-Bot.git
+git clone https://github.com/snakeying/GPT-Telegram-Bot.git
 cd GPT-Telegram-Bot
 ```
 
