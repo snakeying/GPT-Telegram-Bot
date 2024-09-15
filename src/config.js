@@ -18,4 +18,7 @@ module.exports = {
   GROQ_API_KEY: process.env.GROQ_API_KEY,
   GROQ_MODELS: process.env.GROQ_MODELS ? process.env.GROQ_MODELS.split(',').map(model => model.trim()) : [],
   MAX_HISTORY_LENGTH: parseInt(process.env.MAX_HISTORY_LENGTH) || 50,
+  CLAUDE_API_KEY: process.env.CLAUDE_API_KEY,
+  CLAUDE_MODELS: process.env.CLAUDE_MODELS ? process.env.CLAUDE_MODELS.split(',').map(model => model.trim()) : [],
+  CLAUDE_ENDPOINT: process.env.CLAUDE_ENDPOINT || 'https://api.anthropic.com/v1/chat/completions',
 };
