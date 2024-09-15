@@ -13,7 +13,7 @@ const {
   UPSTASH_REDIS_REST_TOKEN
 } = require('./config');
 const { generateResponse, generateStreamResponse } = require('./api');
-const { generateGeminiStreamResponse } = require('./geminiApi');
+const { generateGeminiResponse } = require('./geminiApi');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 const { generateImage, VALID_SIZES } = require('./generateImage');
 const { handleImageUpload } = require('./uploadHandler');
@@ -193,10 +193,20 @@ async function handleStreamMessage(msg) {
   await bot.sendChatAction(chatId, 'typing');
   const conversationHistory = await getConversationHistory(userId);
 
-  let stream;
   if (GOOGLE_MODELS.includes(currentModel) && GEMINI_API_KEY) {
-    stream = generateGeminiStreamResponse(msg.text, conversationHistory, currentModel);
-  } else if (OPENAI_API_KEY) {
+    try {
+      const response = await generateGeminiResponse(msg.text, conversationHistory, currentModel);
+      await bot.sendMessage(chatId, response, {parse_mode: 'Markdown'});
+      await addToConversationHistory(userId, msg.text, response);
+    } catch (error) {
+      console.error('Error in Gemini processing:', error);
+      await bot.sendMessage(chatId, 'Sorry, there was an error generating the response. Please try again later.', {parse_mode: 'Markdown'});
+    }
+    return;
+  }
+
+  let stream;
+  if (OPENAI_API_KEY) {
     stream = generateStreamResponse(msg.text, conversationHistory, currentModel);
   } else {
     await bot.sendMessage(chatId, 'Sorry, no valid API key is available for the current model.');
@@ -224,7 +234,6 @@ async function handleStreamMessage(msg) {
           });
         } catch (error) {
           console.error('Error editing message:', error);
-          // 如果编辑失败，可能是由于 Markdown 解析错误，尝试不使用 Markdown 发送
           await bot.editMessageText(fullResponse, {
             chat_id: chatId,
             message_id: messageId
