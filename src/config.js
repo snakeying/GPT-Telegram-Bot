@@ -15,5 +15,7 @@ module.exports = {
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   GOOGLE_MODELS: process.env.GOOGLE_MODELS ? process.env.GOOGLE_MODELS.split(',').map(model => model.trim()) : [],
   GEMINI_ENDPOINT: process.env.GEMINI_ENDPOINT || 'https://generativelanguage.googleapis.com/v1beta/models',
+  GROQ_API_KEY: process.env.GROQ_API_KEY,
+  GROQ_MODELS: process.env.GROQ_MODELS ? process.env.GROQ_MODELS.split(',').map(model => model.trim()) : [],
   MAX_HISTORY_LENGTH: parseInt(process.env.MAX_HISTORY_LENGTH) || 50,
 };
