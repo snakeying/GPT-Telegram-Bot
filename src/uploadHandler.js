@@ -102,7 +102,13 @@ async function analyzeImage(base64Content, mimeType, prompt, model) {
     return response.choices[0].message.content;
   } catch (error) {
     console.error('Error in OpenAI API call:', error);
-    return 'An error occurred while analyzing the image.';
+    if (error.response) {
+      return `API Error: ${error.response.status} - ${error.response.data.error.message}`;
+    } else if (error.request) {
+      return 'No response received from the API. Please try again later.';
+    } else {
+      return `Error: ${error.message}`;
+    }
   }
 }
 
