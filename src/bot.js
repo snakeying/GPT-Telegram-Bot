@@ -1,19 +1,21 @@
-
 const TelegramBot = require('node-telegram-bot-api');
 const { Redis } = require('@upstash/redis');
 const { 
   TELEGRAM_BOT_TOKEN, 
   WHITELISTED_USERS, 
   OPENAI_MODELS, 
-  GOOGLE_MODELS, 
+  GOOGLE_MODELS,
+  GROQ_MODELS,
   DEFAULT_MODEL,
   OPENAI_API_KEY,
   GEMINI_API_KEY,
+  GROQ_API_KEY,
   UPSTASH_REDIS_REST_URL,
   UPSTASH_REDIS_REST_TOKEN
 } = require('./config');
 const { generateResponse, generateStreamResponse } = require('./api');
 const { generateGeminiResponse } = require('./geminiApi');
+const { generateGroqResponse } = require('./groqapi');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 const { generateImage, VALID_SIZES } = require('./generateImage');
 const { handleImageUpload } = require('./uploadHandler');
@@ -94,14 +96,17 @@ async function handleSwitchModel(msg) {
 
   const modelName = args[1].trim();
   
-  if ((OPENAI_MODELS.includes(modelName) && OPENAI_API_KEY) || (GOOGLE_MODELS.includes(modelName) && GEMINI_API_KEY)) {
+  if ((OPENAI_MODELS.includes(modelName) && OPENAI_API_KEY) || 
+      (GOOGLE_MODELS.includes(modelName) && GEMINI_API_KEY) ||
+      (GROQ_MODELS.includes(modelName) && GROQ_API_KEY)) {
     currentModel = modelName;
     await clearConversationHistory(userId);
     await bot.sendMessage(chatId, `Model switched to: ${modelName}. Previous conversation has been cleared.`, {parse_mode: 'Markdown'});
   } else {
     const availableModels = [
       ...(OPENAI_API_KEY ? OPENAI_MODELS : []),
-      ...(GEMINI_API_KEY ? GOOGLE_MODELS : [])
+      ...(GEMINI_API_KEY ? GOOGLE_MODELS : []),
+      ...(GROQ_API_KEY ? GROQ_MODELS : [])
     ];
     await bot.sendMessage(chatId, `Invalid model name or API key not set. Available models are: ${availableModels.join(', ')}`, {parse_mode: 'Markdown'});
   }
@@ -162,7 +167,7 @@ async function handleImageGeneration(msg) {
     console.log(`Image URL generated: ${imageUrl}`);
     
     if (imageUrl) {
-      await redis.set(requestId, imageUrl, { ex: 3600 }); // 1小时过期
+      await redis.set(requestId, imageUrl, { ex: 86400 }); // 1天后过期
       
       console.log(`开始发送图片. URL: ${imageUrl}`);
       await bot.sendPhoto(chatId, imageUrl, { caption: prompt });
@@ -192,6 +197,18 @@ async function handleStreamMessage(msg) {
   
   await bot.sendChatAction(chatId, 'typing');
   const conversationHistory = await getConversationHistory(userId);
+
+  if (GROQ_MODELS.includes(currentModel) && GROQ_API_KEY) {
+    try {
+      const response = await generateGroqResponse(msg.text, conversationHistory, currentModel);
+      await bot.sendMessage(chatId, response, {parse_mode: 'Markdown'});
+      await addToConversationHistory(userId, msg.text, response);
+    } catch (error) {
+      console.error('Error in Groq processing:', error);
+      await bot.sendMessage(chatId, 'Sorry, there was an error generating the response. Please try again later.', {parse_mode: 'Markdown'});
+    }
+    return;
+  }
 
   if (GOOGLE_MODELS.includes(currentModel) && GEMINI_API_KEY) {
     try {
