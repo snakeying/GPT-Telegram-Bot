@@ -23,7 +23,7 @@ function sanitizeMarkdown(text) {
   return sanitized;
 }
 
-async function* generateGeminiStreamResponse(prompt, conversationHistory, model) {
+async function generateGeminiResponse(prompt, conversationHistory, model) {
   try {
     const geminiModel = genAI.getGenerativeModel({ model: model });
 
@@ -40,18 +40,13 @@ async function* generateGeminiStreamResponse(prompt, conversationHistory, model)
       ],
     });
 
-    const result = await chat.sendMessageStream(prompt);
-
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text();
-      if (chunkText) {
-        yield sanitizeMarkdown(chunkText);
-      }
-    }
+    const result = await chat.sendMessage(prompt);
+    const response = result.response;
+    return sanitizeMarkdown(response.text());
   } catch (error) {
-    console.error('Error in generateGeminiStreamResponse:', error);
-    throw new Error(`Failed to generate Gemini stream response: ${error.message}`);
+    console.error('Error in generateGeminiResponse:', error);
+    throw new Error(`Failed to generate Gemini response: ${error.message}`);
   }
 }
 
-module.exports = { generateGeminiStreamResponse };
+module.exports = { generateGeminiResponse };
