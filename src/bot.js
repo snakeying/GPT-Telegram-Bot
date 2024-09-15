@@ -1,3 +1,4 @@
+
 const TelegramBot = require('node-telegram-bot-api');
 const { Redis } = require('@upstash/redis');
 const { 
@@ -248,40 +249,41 @@ async function handleStreamMessage(msg) {
 }
 
 async function handleImageAnalysis(msg) {
-  const chatId = msg.chat.id;
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
   
-  if (!OPENAI_API_KEY) {
-    await bot.sendMessage(chatId, 'Sorry, image analysis is not available without OpenAI API key.');
-    return;
+    if (!OPENAI_API_KEY) {
+      await bot.sendMessage(chatId, 'Sorry, image analysis is not available without OpenAI API key.');
+      return;
+    }
+  
+    // Check if a photo is attached
+    const photo = msg.photo && msg.photo[msg.photo.length - 1];
+    if (!photo) {
+      await bot.sendMessage(chatId, 'Please attach a photo to analyze.');
+      return;
+    }
+  
+    // Get the prompt from the caption or wait for it
+    let prompt = msg.caption;
+    if (!prompt) {
+      await bot.sendMessage(chatId, 'Please provide a prompt for image analysis.');
+      // Wait for the next message to be the prompt
+      const promptMsg = await new Promise(resolve => bot.once('message', resolve));
+      prompt = promptMsg.text;
+    }
+  
+    await bot.sendMessage(chatId, 'Analyzing your image. This may take a moment...');
+  
+    try {
+      const fileInfo = await bot.getFile(photo.file_id);
+      const result = await handleImageUpload(fileInfo, prompt, currentModel);
+      await bot.sendMessage(chatId, result, { parse_mode: 'Markdown' });
+    } catch (error) {
+      console.error('Error in image analysis:', error);
+      await bot.sendMessage(chatId, `An error occurred while analyzing the image: ${error.message}`);
+    }
   }
-
-  // Check if a photo is attached
-  const photo = msg.photo && msg.photo[msg.photo.length - 1];
-  if (!photo) {
-    await bot.sendMessage(chatId, 'Please attach a photo to analyze.');
-    return;
-  }
-
-  // Get the prompt from the caption or wait for it
-  let prompt = msg.caption;
-  if (!prompt) {
-    await bot.sendMessage(chatId, 'Please provide a prompt for image analysis.');
-    // Wait for the next message to be the prompt
-    const promptMsg = await new Promise(resolve => bot.once('message', resolve));
-    prompt = promptMsg.text;
-  }
-
-  await bot.sendMessage(chatId, 'Analyzing your image. This may take a moment...');
-
-  try {
-    const fileInfo = await bot.getFile(photo.file_id);
-    const result = await handleImageUpload(fileInfo, prompt, currentModel);
-    await bot.sendMessage(chatId, result, { parse_mode: 'Markdown' });
-  } catch (error) {
-    console.error('Error in image analysis:', error);
-    await bot.sendMessage(chatId, 'An error occurred while analyzing the image. Please try again.');
-  }
-}
 
 async function handleMessage(update) {
   const msg = getMessageFromUpdate(update);
