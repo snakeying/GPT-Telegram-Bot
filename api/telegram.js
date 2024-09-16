@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
         const isProcessed = await redis.get(key);
         
         if (!isProcessed) {
-          await redis.set(key, 'true', { ex: 3600 }); // 设置1小时过期
+          await redis.set(key, 'true', { ex: 86400 });
           
           const message = getMessageFromUpdate(update);
           if (message) {
