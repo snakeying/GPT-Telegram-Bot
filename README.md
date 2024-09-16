@@ -18,7 +18,7 @@ GPT-Telegram-Bot 是一个功能强大的 Telegram 机器人，集成了多种 A
 
 ## 支持的 AI 模型 🧠
 
-- OpenAI GPT 系列：强大的语言模型 🚀
+- OpenAI 系列：强大的语言模型 🚀
 - Google Gemini：Google 的新一代 AI 模型 🧑‍🔬
 - Anthropic Claude：另一个强大的语言模型选择 🎭
 - Groq：高速推理的 AI 模型 ⚡
