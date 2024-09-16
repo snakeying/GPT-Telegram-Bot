@@ -8,7 +8,7 @@ GPT-Telegram-Bot 是一个功能强大的 Telegram 机器人，集成了多种 A
 
 ## 主要功能 🌟
 
-1. **多模型支持** 🎭：集成 兼容OpenAI API的模型、Google Gemini、Anthropic Claude、Groq 和 Azure OpenAI
+1. **多模型支持** 🎭：任意兼容OpenAI API的模型、Google Gemini、Anthropic Claude、Groq 和 Azure OpenAI
 2. **智能对话** 💬：支持上下文记忆的自然语言交互
 3. **图像生成** 🎨：基于文字描述创建图像
 4. **图像分析** 🔍：解读并描述上传的图片
