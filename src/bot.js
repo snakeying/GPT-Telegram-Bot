@@ -120,8 +120,16 @@ async function handleSwitchModel(msg) {
   const userLang = await getUserLanguage(userId);
   const args = msg.text.split(' ');
   
+  const availableModels = [
+    ...(OPENAI_API_KEY ? OPENAI_MODELS : []),
+    ...(GEMINI_API_KEY ? GOOGLE_MODELS : []),
+    ...(GROQ_API_KEY ? GROQ_MODELS : []),
+    ...(CLAUDE_API_KEY ? CLAUDE_MODELS : []),
+    ...(AZURE_OPENAI_API_KEY ? AZURE_OPENAI_MODELS : [])
+  ];
+
   if (args.length < 2) {
-    await bot.sendMessage(chatId, translate('invalid_model', userLang, {available_models: ''}), {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, translate('forgot_model_name', userLang, {available_models: availableModels.join(', ')}), {parse_mode: 'Markdown'});
     return;
   }
 
@@ -136,13 +144,6 @@ async function handleSwitchModel(msg) {
     await clearConversationHistory(userId);
     await bot.sendMessage(chatId, translate('model_switched', userLang, {model: modelName}), {parse_mode: 'Markdown'});
   } else {
-    const availableModels = [
-      ...(OPENAI_API_KEY ? OPENAI_MODELS : []),
-      ...(GEMINI_API_KEY ? GOOGLE_MODELS : []),
-      ...(GROQ_API_KEY ? GROQ_MODELS : []),
-      ...(CLAUDE_API_KEY ? CLAUDE_MODELS : []),
-      ...(AZURE_OPENAI_API_KEY ? AZURE_OPENAI_MODELS : [])
-    ];
     await bot.sendMessage(chatId, translate('invalid_model', userLang, {available_models: availableModels.join(', ')}), {parse_mode: 'Markdown'});
   }
 }
