@@ -25,7 +25,7 @@ async function getUserLanguage(userId) {
 
 async function setUserLanguage(userId, language) {
   if (supportedLanguages.includes(language)) {
-    await redis.set(`user_lang:${userId}`, language);
+    await redis.set(`user_lang:${userId}`, language, { ex: 31536000 }); // 1 year TTL
     return true;
   }
   return false;
