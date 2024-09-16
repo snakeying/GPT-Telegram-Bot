@@ -18,5 +18,6 @@
   "en": "English",
   "zh-cn": "Simplified Chinese",
   "no_image": "Please attach an image for analysis.",
+  "use_help_command": "You can use the /help command for usage instructions.",
   "provide_image_description": "Please provide a description or question for the image analysis."
 }
