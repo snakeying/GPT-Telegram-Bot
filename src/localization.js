@@ -16,14 +16,16 @@ supportedLanguages.forEach(lang => {
 function getUserLanguage(userId, telegramLanguageCode) {
   if (!userLanguages[userId]) {
     // If user hasn't set a language, use Telegram's language code or default to English
-    userLanguages[userId] = supportedLanguages.includes(telegramLanguageCode) ? telegramLanguageCode : defaultLanguage;
+    const shortLangCode = telegramLanguageCode ? telegramLanguageCode.split('-')[0] : defaultLanguage;
+    userLanguages[userId] = supportedLanguages.includes(shortLangCode) ? shortLangCode : defaultLanguage;
   }
   return userLanguages[userId];
 }
 
 function setUserLanguage(userId, language) {
-  if (supportedLanguages.includes(language)) {
-    userLanguages[userId] = language;
+  const shortLangCode = language.split('-')[0];
+  if (supportedLanguages.includes(shortLangCode)) {
+    userLanguages[userId] = shortLangCode;
     return true;
   }
   return false;
