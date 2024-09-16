@@ -4,7 +4,6 @@ const { GEMINI_API_KEY, GEMINI_ENDPOINT, SYSTEM_INIT_MESSAGE, SYSTEM_INIT_MESSAG
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY, GEMINI_ENDPOINT);
 
 function sanitizeMarkdown(text) {
-  // 只转义未配对的特殊字符
   const specialChars = ['*', '_', '`', '['];
   let sanitized = text;
   
@@ -13,7 +12,6 @@ function sanitizeMarkdown(text) {
     sanitized = sanitized.replace(regex, `\\${char}`);
   });
 
-  // 处理可能导致问题的其他字符
   sanitized = sanitized
     .replace(/\]/g, '\\]')
     .replace(/\)/g, '\\)')
