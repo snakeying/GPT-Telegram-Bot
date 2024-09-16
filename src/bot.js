@@ -50,7 +50,7 @@ function getMessageFromUpdate(update) {
 async function handleStart(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId, msg.from.language_code);
+  const userLang = await getUserLanguage(userId);
   try {
     await bot.sendMessage(chatId, translate('welcome', userLang, {model: currentModel}), {parse_mode: 'Markdown'});
     console.log('Start message sent successfully');
@@ -62,7 +62,7 @@ async function handleStart(msg) {
 async function handleNew(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId, msg.from.language_code);
+  const userLang = await getUserLanguage(userId);
   try {
     await clearConversationHistory(userId);
     await bot.sendMessage(chatId, translate('new_conversation', userLang, {model: currentModel}), {parse_mode: 'Markdown'});
@@ -75,7 +75,7 @@ async function handleNew(msg) {
 async function handleHistory(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId, msg.from.language_code);
+  const userLang = await getUserLanguage(userId);
   try {
     const history = await getConversationHistory(userId);
     console.log('Processed history:', JSON.stringify(history, null, 2));
@@ -94,7 +94,7 @@ async function handleHistory(msg) {
 async function handleHelp(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId, msg.from.language_code);
+  const userLang = await getUserLanguage(userId);
   try {
     const availableModels = [
       ...(OPENAI_API_KEY ? OPENAI_MODELS : []),
@@ -117,7 +117,7 @@ async function handleHelp(msg) {
 async function handleSwitchModel(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId, msg.from.language_code);
+  const userLang = await getUserLanguage(userId);
   const args = msg.text.split(' ');
   
   if (args.length < 2) {
@@ -150,7 +150,7 @@ async function handleSwitchModel(msg) {
 async function handleImageGeneration(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId, msg.from.language_code);
+  const userLang = await getUserLanguage(userId);
 
   if (!OPENAI_API_KEY) {
     await bot.sendMessage(chatId, translate('no_api_key', userLang));
@@ -230,7 +230,7 @@ async function handleImageGeneration(msg) {
 async function handleStreamMessage(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId, msg.from.language_code);
+  const userLang = await getUserLanguage(userId);
   
   await bot.sendChatAction(chatId, 'typing');
   const conversationHistory = await getConversationHistory(userId);
@@ -318,7 +318,7 @@ async function handleStreamMessage(msg) {
 async function handleImageAnalysis(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId, msg.from.language_code);
+  const userLang = await getUserLanguage(userId);
 
   if (!OPENAI_API_KEY) {
     await bot.sendMessage(chatId, translate('no_api_key', userLang));
@@ -356,7 +356,7 @@ async function handleImageAnalysis(msg) {
 async function handleLanguageChange(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const currentLang = await getUserLanguage(userId, msg.from.language_code);
+  const currentLang = await getUserLanguage(userId);
   
   const keyboard = supportedLanguages.map(lang => [{text: translate(lang, currentLang), callback_data: `lang_${lang}`}]);
   
@@ -388,7 +388,7 @@ async function handleMessage(update) {
       return;
     }
 
-    const userLang = await getUserLanguage(userId, msg.from.language_code);
+    const userLang = await getUserLanguage(userId);
 
     if (msg.photo) {
       await handleImageAnalysis(msg);
@@ -420,7 +420,6 @@ async function handleMessage(update) {
   }
 }
 
-// Handle callback queries for language selection
 async function handleCallbackQuery(callbackQuery) {
   const action = callbackQuery.data;
   const msg = callbackQuery.message;
@@ -434,6 +433,6 @@ async function handleCallbackQuery(callbackQuery) {
       await bot.sendMessage(msg.chat.id, translate('language_changed', userLang));
     }
   }
-};
+}
 
 module.exports = { bot, handleMessage, handleStart, getMessageFromUpdate, handleCallbackQuery };
