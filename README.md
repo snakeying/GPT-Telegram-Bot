@@ -50,7 +50,9 @@ GPT-Telegram-Bot 是一个功能强大的 Telegram 机器人，集成了多种 A
    创建 `.env` 文件并填入必要的配置信息（参考下方的环境变量配置）。
 
 4. 部署到 Vercel：
-   - 点击上方的 "Deploy with Vercel" 按钮
+   - fork这个repo
+   - 按照readme最下方的指引修改
+   - 点击"Deploy with Vercel" 按钮
    - 连接你的 GitHub 仓库
    - 配置环境变量
    - 完成部署
