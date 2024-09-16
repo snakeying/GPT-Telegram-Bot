@@ -14,7 +14,7 @@
   "error_message": "Oops, looks like we've hit a small snag 😅\n\nAn unexpected situation occurred while processing your message.\nDon't worry, these things happen occasionally.\n\n💡 Suggestions:\n1. Try again later\n2. Use the /help command to view the user guide, you might find a solution there\n3. If the problem persists, please contact the admin\n\nThank you for your understanding and patience!",
   "choose_language": "Please choose your language:",
   "language_set": "Language set successfully!",
-  "language_changed": "Your language has been changed to English."
+  "language_changed": "Your language has been changed to English.",
   "en": "English",
   "zh-cn": "Simplified Chinese",
   "no_image": "Please attach an image for analysis.",
