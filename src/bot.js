@@ -41,6 +41,9 @@ const redis = new Redis({
 });
 
 function getMessageFromUpdate(update) {
+  if (update.callback_query) {
+    return update.callback_query.message;
+  }
   return update.message || update.edited_message;
 }
 
@@ -365,6 +368,11 @@ async function handleLanguageChange(msg) {
 }
 
 async function handleMessage(update) {
+  if (update.callback_query) {
+    await handleCallbackQuery(update.callback_query);
+    return;
+  }
+
   const msg = getMessageFromUpdate(update);
   if (!msg) {
     console.log('Update does not contain a valid message');
@@ -413,7 +421,7 @@ async function handleMessage(update) {
 }
 
 // Handle callback queries for language selection
-bot.on('callback_query', async (callbackQuery) => {
+async function handleCallbackQuery(callbackQuery) {
   const action = callbackQuery.data;
   const msg = callbackQuery.message;
   const userId = callbackQuery.from.id;
@@ -426,6 +434,6 @@ bot.on('callback_query', async (callbackQuery) => {
       await bot.sendMessage(msg.chat.id, translate('language_changed', userLang));
     }
   }
-});
+};
 
-module.exports = { bot, handleMessage, handleStart, getMessageFromUpdate };
+module.exports = { bot, handleMessage, handleStart, getMessageFromUpdate, handleCallbackQuery };
