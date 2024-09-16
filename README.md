@@ -47,7 +47,7 @@ GPT-Telegram-Bot 是一个功能强大的 Telegram 机器人，集成了多种 A
    ```
 
 3. 配置环境变量：
-   创建 `.env` 文件并填入必要的配置信息（参考 `.env.example`）。
+   创建 `.env` 文件并填入必要的配置信息（参考下方的环境变量配置）。
 
 4. 部署到 Vercel：
    - 点击上方的 "Deploy with Vercel" 按钮
@@ -60,6 +60,38 @@ GPT-Telegram-Bot 是一个功能强大的 Telegram 机器人，集成了多种 A
    ```
    https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=<YOUR_VERCEL_DOMAIN>/api/telegram
    ```
+
+## 环境变量配置 🔧
+
+在部署和运行 GPT-Telegram-Bot 之前，您需要设置以下环境变量。创建一个 `.env` 文件在项目根目录下，并配置以下变量：
+
+| 变量名 | 描述 | 默认值 |
+|--------|------|--------|
+| `OPENAI_API_KEY` | OpenAI API 密钥 | - |
+| `OPENAI_BASE_URL` | OpenAI API 基础 URL | https://api.openai.com/v1 |
+| `OPENAI_MODELS` | 使用的 OpenAI 模型（逗号分隔） | - |
+| `DEFAULT_MODEL` | 默认使用的模型 | OPENAI_MODELS 的第一个模型 |
+| `AZURE_OPENAI_API_KEY` | Azure OpenAI API 密钥 | - |
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI 端点 | - |
+| `AZURE_OPENAI_MODELS` | 使用的 Azure OpenAI 模型（逗号分隔） | - |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token | - |
+| `WHITELISTED_USERS` | 允许使用的用户 ID（逗号分隔） | - |
+| `DALL_E_MODEL` | 使用的 DALL-E 模型 | dall-e-3 |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL | - |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST Token | - |
+| `SYSTEM_INIT_MESSAGE` | 系统初始化消息 | You are a helpful assistant. |
+| `SYSTEM_INIT_MESSAGE_ROLE` | 系统消息角色 | system |
+| `GEMINI_API_KEY` | Google Gemini API 密钥 | - |
+| `GOOGLE_MODELS` | 使用的 Google 模型（逗号分隔） | - |
+| `GEMINI_ENDPOINT` | Gemini API 端点 | https://generativelanguage.googleapis.com/v1beta/models |
+| `GROQ_API_KEY` | Groq API 密钥 | - |
+| `GROQ_MODELS` | 使用的 Groq 模型（逗号分隔） | - |
+| `MAX_HISTORY_LENGTH` | 最大历史记录长度 | 50 |
+| `CLAUDE_API_KEY` | Anthropic Claude API 密钥 | - |
+| `CLAUDE_MODELS` | 使用的 Claude 模型（逗号分隔） | - |
+| `CLAUDE_ENDPOINT` | Claude API 端点 | https://api.anthropic.com/v1/chat/completions |
+
+确保在部署到 Vercel 或其他平台时，将这些环境变量添加到项目的环境配置中。
 
 ## 使用指南 📖
 
