@@ -378,27 +378,27 @@ async function handleMessage(update) {
       return;
     }
 
-    const userLang = await getUserLanguage(userId);
+    const userLang = getUserLanguage(userId, msg.from.language_code);
 
     if (msg.photo) {
-      await handleImageAnalysis(msg);
+      await handleImageAnalysis(msg, userLang);
     } else if (msg.text) {
       if (msg.text === '/start') {
-        await handleStart(msg);
+        await handleStart(msg, userLang);
       } else if (msg.text === '/new') {
-        await handleNew(msg);
+        await handleNew(msg, userLang);
       } else if (msg.text === '/history') {
-        await handleHistory(msg);
+        await handleHistory(msg, userLang);
       } else if (msg.text === '/help') {
-        await handleHelp(msg);
+        await handleHelp(msg, userLang);
       } else if (msg.text.startsWith('/switchmodel')) {
-        await handleSwitchModel(msg);
+        await handleSwitchModel(msg, userLang);
       } else if (msg.text.startsWith('/img')) {
-        await handleImageGeneration(msg);
+        await handleImageGeneration(msg, userLang);
       } else if (msg.text === '/language') {
-        await handleLanguageChange(msg);
+        await handleLanguageChange(msg, userLang);
       } else {
-        await handleStreamMessage(msg);
+        await handleStreamMessage(msg, userLang);
       }
     } else {
       console.log('Received unsupported message type');
