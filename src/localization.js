@@ -1,11 +1,11 @@
 const fs = require('fs');
 const path = require('path');
+const { Redis } = require('@upstash/redis');
 
 const defaultLanguage = 'en';
 const supportedLanguages = ['en', 'zh-cn'];
 
 let translations = {};
-let userLanguages = {};
 
 // Load all language files
 supportedLanguages.forEach(lang => {
@@ -13,19 +13,19 @@ supportedLanguages.forEach(lang => {
   translations[lang] = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 });
 
-function getUserLanguage(userId, telegramLanguageCode) {
-  if (!userLanguages[userId]) {
-    // If user hasn't set a language, use Telegram's language code or default to English
-    const shortLangCode = telegramLanguageCode ? telegramLanguageCode.split('-')[0] : defaultLanguage;
-    userLanguages[userId] = supportedLanguages.includes(shortLangCode) ? shortLangCode : defaultLanguage;
-  }
-  return userLanguages[userId];
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+async function getUserLanguage(userId) {
+  const lang = await redis.get(`user_lang:${userId}`);
+  return lang || defaultLanguage;
 }
 
-function setUserLanguage(userId, language) {
-  const shortLangCode = language.split('-')[0];
-  if (supportedLanguages.includes(shortLangCode)) {
-    userLanguages[userId] = shortLangCode;
+async function setUserLanguage(userId, language) {
+  if (supportedLanguages.includes(language)) {
+    await redis.set(`user_lang:${userId}`, language);
     return true;
   }
   return false;
