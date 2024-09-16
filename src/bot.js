@@ -30,7 +30,9 @@ const { getUserLanguage, setUserLanguage, translate, supportedLanguages } = requ
 let currentModel = OPENAI_API_KEY ? DEFAULT_MODEL : null;
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
-  cancellation: true
+  webhook: {
+    port: process.env.PORT
+  }
 });
 
 const redis = new Redis({
@@ -45,7 +47,7 @@ function getMessageFromUpdate(update) {
 async function handleStart(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId);
+  const userLang = await getUserLanguage(userId, msg.from.language_code);
   try {
     await bot.sendMessage(chatId, translate('welcome', userLang, {model: currentModel}), {parse_mode: 'Markdown'});
     console.log('Start message sent successfully');
@@ -57,7 +59,7 @@ async function handleStart(msg) {
 async function handleNew(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId);
+  const userLang = await getUserLanguage(userId, msg.from.language_code);
   try {
     await clearConversationHistory(userId);
     await bot.sendMessage(chatId, translate('new_conversation', userLang, {model: currentModel}), {parse_mode: 'Markdown'});
@@ -70,7 +72,7 @@ async function handleNew(msg) {
 async function handleHistory(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId);
+  const userLang = await getUserLanguage(userId, msg.from.language_code);
   try {
     const history = await getConversationHistory(userId);
     console.log('Processed history:', JSON.stringify(history, null, 2));
@@ -89,7 +91,7 @@ async function handleHistory(msg) {
 async function handleHelp(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId);
+  const userLang = await getUserLanguage(userId, msg.from.language_code);
   try {
     const availableModels = [
       ...(OPENAI_API_KEY ? OPENAI_MODELS : []),
@@ -112,7 +114,7 @@ async function handleHelp(msg) {
 async function handleSwitchModel(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId);
+  const userLang = await getUserLanguage(userId, msg.from.language_code);
   const args = msg.text.split(' ');
   
   if (args.length < 2) {
@@ -145,7 +147,7 @@ async function handleSwitchModel(msg) {
 async function handleImageGeneration(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId);
+  const userLang = await getUserLanguage(userId, msg.from.language_code);
 
   if (!OPENAI_API_KEY) {
     await bot.sendMessage(chatId, translate('no_api_key', userLang));
@@ -225,7 +227,7 @@ async function handleImageGeneration(msg) {
 async function handleStreamMessage(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId);
+  const userLang = await getUserLanguage(userId, msg.from.language_code);
   
   await bot.sendChatAction(chatId, 'typing');
   const conversationHistory = await getConversationHistory(userId);
@@ -313,7 +315,7 @@ async function handleStreamMessage(msg) {
 async function handleImageAnalysis(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId);
+  const userLang = await getUserLanguage(userId, msg.from.language_code);
 
   if (!OPENAI_API_KEY) {
     await bot.sendMessage(chatId, translate('no_api_key', userLang));
@@ -351,7 +353,7 @@ async function handleImageAnalysis(msg) {
 async function handleLanguageChange(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const currentLang = await getUserLanguage(userId);
+  const currentLang = await getUserLanguage(userId, msg.from.language_code);
   
   const keyboard = supportedLanguages.map(lang => [{text: translate(lang, currentLang), callback_data: `lang_${lang}`}]);
   
@@ -378,27 +380,27 @@ async function handleMessage(update) {
       return;
     }
 
-    const userLang = getUserLanguage(userId, msg.from.language_code);
+    const userLang = await getUserLanguage(userId, msg.from.language_code);
 
     if (msg.photo) {
-      await handleImageAnalysis(msg, userLang);
+      await handleImageAnalysis(msg);
     } else if (msg.text) {
       if (msg.text === '/start') {
-        await handleStart(msg, userLang);
+        await handleStart(msg);
       } else if (msg.text === '/new') {
-        await handleNew(msg, userLang);
+        await handleNew(msg);
       } else if (msg.text === '/history') {
-        await handleHistory(msg, userLang);
+        await handleHistory(msg);
       } else if (msg.text === '/help') {
-        await handleHelp(msg, userLang);
+        await handleHelp(msg);
       } else if (msg.text.startsWith('/switchmodel')) {
-        await handleSwitchModel(msg, userLang);
+        await handleSwitchModel(msg);
       } else if (msg.text.startsWith('/img')) {
-        await handleImageGeneration(msg, userLang);
+        await handleImageGeneration(msg);
       } else if (msg.text === '/language') {
-        await handleLanguageChange(msg, userLang);
+        await handleLanguageChange(msg);
       } else {
-        await handleStreamMessage(msg, userLang);
+        await handleStreamMessage(msg);
       }
     } else {
       console.log('Received unsupported message type');
@@ -419,8 +421,9 @@ bot.on('callback_query', async (callbackQuery) => {
   if (action.startsWith('lang_')) {
     const newLang = action.split('_')[1];
     if (await setUserLanguage(userId, newLang)) {
-      await bot.answerCallbackQuery(callbackQuery.id, {text: translate('language_set', newLang)});
-      await bot.sendMessage(msg.chat.id, translate('language_changed', newLang));
+      const userLang = await getUserLanguage(userId);
+      await bot.answerCallbackQuery(callbackQuery.id, {text: translate('language_set', userLang)});
+      await bot.sendMessage(msg.chat.id, translate('language_changed', userLang));
     }
   }
 });
