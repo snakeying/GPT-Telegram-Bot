@@ -165,7 +165,7 @@ async function handleImageGeneration(msg) {
 
   // Check if the last argument is possibly a size
   const possibleSize = args[args.length - 1];
-  if (possibleSize.includes('x')) {
+  if (possibleSize && possibleSize.includes('x')) {
     const [width, height] = possibleSize.split('x').map(Number);
     if (VALID_SIZES.includes(`${width}x${height}`)) {
       size = `${width}x${height}`;
@@ -180,7 +180,8 @@ async function handleImageGeneration(msg) {
   prompt = args.join(' ');
 
   if (prompt.trim() === '') {
-    await bot.sendMessage(chatId, translate('no_image_description', userLang));
+    // If no description is provided, suggest using /help command
+    await bot.sendMessage(chatId, translate('no_image_description', userLang) + ' ' + translate('use_help_command', userLang));
     return;
   }
 
