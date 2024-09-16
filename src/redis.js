@@ -40,7 +40,7 @@ async function addToConversationHistory(userId, message, response) {
     }
     
     const jsonHistory = JSON.stringify(history);
-    await redis.set(key, jsonHistory);
+    await redis.set(key, jsonHistory, { ex: 2592000 }); // 30 days TTL
     console.log(`Updated history for user ${userId}:`, jsonHistory);
   } catch (error) {
     console.error('Error adding to conversation history:', error);
