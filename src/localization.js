@@ -3,7 +3,7 @@ const path = require('path');
 const { Redis } = require('@upstash/redis');
 
 const defaultLanguage = 'en';
-const supportedLanguages = ['en', 'zh-cn'];
+const supportedLanguages = ['en', 'zh-cn', 'zh-hant'];
 
 let translations = {};
 
