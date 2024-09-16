@@ -19,5 +19,7 @@
   "zh-cn": "简体中文",
   "no_image": "请附上一张要分析的图片。",
   "use_help_command": "请使用 /help 命令查看使用说明。",
-  "provide_image_description": "请为图片分析提供一个描述或问题。"
+  "provide_image_description": "请为图片分析提供一个描述或问题。",
+  "forgot_model_name": "哎呀，您是不是忘记输入模型名称了？可用的模型有：{available_models}",
+  "invalid_model": "哎呀，模型名称无效或者API密钥未设置。可用的模型有：{available_models}"
 }
