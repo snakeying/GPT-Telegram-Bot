@@ -56,7 +56,7 @@ GPT-Telegram-Bot/
 
 - [Vercel](https://vercel.com/) アカウント
 - Telegram アカウントとボットトークン
-- [Upstash](https://upstash.com/) Redis データベース
+- [Upstash](https://upstash.com/) Redisデータベースを選択し、[Eviction](https://upstash.com/docs/redis/features/eviction) 機能を有効にしてください
 - 少なくとも1つの AI サービスの API キー
 
 ### デプロイ手順
