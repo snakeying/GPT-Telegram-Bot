@@ -106,7 +106,7 @@ GPT-Telegram-Bot/
 | `WHITELISTED_USERS` | Разрешенные ID пользователей (разделенные запятыми) | - |
 | `DALL_E_MODEL` | Модель DALL-E для использования | dall-e-3 |
 | `UPSTASH_REDIS_REST_URL` | REST URL Upstash Redis | - |
-| `UPSTASH_REDIS_REST_TOKEN` | REST токен Upstash Redis | - |
+| `UPSTASH_REST_TOKEN` | REST токен Upstash Redis | - |
 | `SYSTEM_INIT_MESSAGE` | Системное инициализационное сообщение | You are a helpful assistant. |
 | `SYSTEM_INIT_MESSAGE_ROLE` | Роль системного сообщения | system |
 | `GEMINI_API_KEY` | API-ключ Google Gemini | - |
