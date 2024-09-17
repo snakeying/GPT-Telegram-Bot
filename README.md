@@ -56,7 +56,7 @@ GPT-Telegram-Bot/
 
 - [Vercel](https://vercel.com/) account
 - Telegram account and Bot Token
-- [Upstash](https://upstash.com/) Redis database
+- [Upstash](https://upstash.com/) Please select the Redis database and enable the [Eviction](https://upstash.com/docs/redis/features/eviction) feature
 - API key for at least one AI service
 
 ### Deployment Steps
