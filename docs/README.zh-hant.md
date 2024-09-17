@@ -56,7 +56,7 @@ GPT-Telegram-Bot/
 
 - [Vercel](https://vercel.com/) 帳號
 - Telegram 帳號和 Bot Token
-- [Upstash](https://upstash.com/) Redis 資料庫
+- [Upstash](https://upstash.com/) 請選擇 Redis 數據庫並啟用 [Eviction](https://upstash.com/docs/redis/features/eviction) 功能
 - 至少一個 AI 服務的 API 金鑰
 
 ### 部署步驟
