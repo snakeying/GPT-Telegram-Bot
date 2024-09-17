@@ -106,7 +106,7 @@ GPT-Telegram-Bot をデプロイ・実行する前に、以下の環境変数を
 | `WHITELISTED_USERS` | 許可するユーザー ID（カンマ区切り） | - |
 | `DALL_E_MODEL` | 使用する DALL-E モデル | dall-e-3 |
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL | - |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST トークン | - |
+| `UPSTASH_REST_TOKEN` | Upstash Redis REST トークン | - |
 | `SYSTEM_INIT_MESSAGE` | システム初期化メッセージ | You are a helpful assistant. |
 | `SYSTEM_INIT_MESSAGE_ROLE` | システムメッセージの役割 | system |
 | `GEMINI_API_KEY` | Google Gemini API キー | - |
