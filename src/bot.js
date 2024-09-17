@@ -25,7 +25,7 @@ const { generateAzureOpenAIResponse } = require('./azureOpenAI');
 const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
 const { generateImage, VALID_SIZES } = require('./generateImage');
 const { handleImageUpload } = require('./uploadHandler');
-const { getUserLanguage, setUserLanguage, translate, supportedLanguages } = require('./localization');
+const { getUserLanguage, setUserLanguage, translate, supportedLanguages, getLocalizedCommands } = require('./localization');
 
 let currentModel = OPENAI_API_KEY ? DEFAULT_MODEL : null;
 
@@ -45,6 +45,16 @@ function getMessageFromUpdate(update) {
     return update.callback_query.message;
   }
   return update.message || update.edited_message;
+}
+
+async function updateBotCommands(userId) {
+  const commands = await getLocalizedCommands(userId);
+  try {
+    await bot.setMyCommands(commands, { scope: { type: 'chat', chat_id: userId } });
+    console.log(`Updated bot commands for user ${userId}`);
+  } catch (error) {
+    console.error(`Failed to update bot commands for user ${userId}:`, error);
+  }
 }
 
 async function handleStart(msg) {
@@ -431,10 +441,18 @@ async function handleCallbackQuery(callbackQuery) {
     const newLang = action.split('_')[1];
     if (await setUserLanguage(userId, newLang)) {
       const userLang = await getUserLanguage(userId);
+      await updateBotCommands(userId);
       await bot.answerCallbackQuery(callbackQuery.id, {text: translate('language_set', userLang)});
       await bot.sendMessage(msg.chat.id, translate('language_changed', userLang));
     }
   }
 }
 
-module.exports = { bot, handleMessage, handleStart, getMessageFromUpdate, handleCallbackQuery };
+module.exports = { 
+  bot, 
+  handleMessage, 
+  handleStart, 
+  getMessageFromUpdate, 
+  handleCallbackQuery,
+  updateBotCommands  // 导出新函数
+};
