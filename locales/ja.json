@@ -27,5 +27,12 @@
   "use_help_command": "使用方法については /help コマンドを使用してください。",
   "provide_image_description": "画像分析のための説明や質問を提供してください。",
   "forgot_model_name": "おっと、モデル名の入力を忘れましたか？利用可能なモデル：{available_models}",
-  "invalid_model": "申し訳ありませんが、モデル名が無効であるか、APIキーが設定されていません。利用可能なモデル：{available_models}"
+  "invalid_model": "申し訳ありませんが、モデル名が無効であるか、APIキーが設定されていません。利用可能なモデル：{available_models}",
+  "cmd_start": "ボットを初期化する",
+  "cmd_new": "新しい会話を開始する",
+  "cmd_history": "会話履歴を見る",
+  "cmd_help": "ヘルプ情報を取得する",
+  "cmd_switchmodel": "AIモデルを切り替える",
+  "cmd_img": "画像を生成する",
+  "cmd_language": "インターフェース言語を切り替える"
 }
