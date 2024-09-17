@@ -1,4 +1,4 @@
-const { bot, handleMessage, handleStart, getMessageFromUpdate } = require('../src/bot');
+const { bot, handleMessage, handleStart, getMessageFromUpdate, updateBotCommands } = require('../src/bot');
 const { Redis } = require('@upstash/redis');
 const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = require('../src/config');
 
@@ -24,6 +24,18 @@ module.exports = async (req, res) => {
           const message = getMessageFromUpdate(update);
           if (message) {
             console.log('Handling message:', JSON.stringify(message));
+            
+            // 检查是否是新用户
+            const userId = message.from.id;
+            const userKey = `user:${userId}`;
+            const userExists = await redis.get(userKey);
+            
+            if (!userExists) {
+              console.log(`New user detected: ${userId}`);
+              await redis.set(userKey, 'true');
+              await updateBotCommands(userId);
+            }
+            
             await handleMessage(update);
             console.log('Message handled successfully');
           } else {
