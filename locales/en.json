@@ -27,5 +27,12 @@
   "use_help_command": "You can use the /help command for usage instructions.",
   "provide_image_description": "Please provide a description or question for the image analysis.",
   "forgot_model_name": "Oops, you forgot to input the model name? Available models are: {available_models}",
-  "invalid_model": "Oops, the model name is invalid or the API key is not set. Available models are: {available_models}"
+  "invalid_model": "Oops, the model name is invalid or the API key is not set. Available models are: {available_models}",
+  "cmd_start": "Initialize the bot",
+  "cmd_new": "Start a new conversation",
+  "cmd_history": "View conversation history",
+  "cmd_help": "Get help information",
+  "cmd_switchmodel": "Switch AI model",
+  "cmd_img": "Generate image",
+  "cmd_language": "Switch interface language"
 }
