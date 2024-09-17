@@ -106,7 +106,7 @@ Avant de déployer et d'exécuter GPT-Telegram-Bot, vous devez configurer les va
 | `WHITELISTED_USERS` | IDs des utilisateurs autorisés (séparés par des virgules) | - |
 | `DALL_E_MODEL` | Modèle DALL-E à utiliser | dall-e-3 |
 | `UPSTASH_REDIS_REST_URL` | URL REST Upstash Redis | - |
-| `UPSTASH_REDIS_REST_TOKEN` | Token REST Upstash Redis | - |
+| `UPSTASH_REST_TOKEN` | Token REST Upstash Redis | - |
 | `SYSTEM_INIT_MESSAGE` | Message d'initialisation du système | You are a helpful assistant. |
 | `SYSTEM_INIT_MESSAGE_ROLE` | Rôle du message système | system |
 | `GEMINI_API_KEY` | Clé API Google Gemini | - |
