@@ -56,7 +56,7 @@ GPT-Telegram-Bot/
 
 - Аккаунт [Vercel](https://vercel.com/)
 - Аккаунт Telegram и токен бота
-- База данных [Upstash](https://upstash.com/) Redis
+- База данных [Upstash](https://upstash.com/) Пожалуйста, выберите базу данных Redis и включите функцию [Eviction](https://upstash.com/docs/redis/features/eviction)
 - API-ключ хотя бы для одного ИИ-сервиса
 
 ### Шаги развертывания
