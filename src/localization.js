@@ -42,4 +42,14 @@ function translate(key, language, params = {}) {
   return text;
 }
 
-module.exports = { getUserLanguage, setUserLanguage, translate, supportedLanguages };
+const commandKeys = ['start', 'new', 'history', 'help', 'switchmodel', 'img', 'language'];
+
+async function getLocalizedCommands(userId) {
+  const userLang = await getUserLanguage(userId);
+  return commandKeys.map(key => ({
+    command: key,
+    description: translate(`cmd_${key}`, userLang)
+  }));
+}
+
+module.exports = { getUserLanguage, setUserLanguage, translate, supportedLanguages, getLocalizedCommands };
