@@ -106,7 +106,7 @@ Before deploying and running GPT-Telegram-Bot, you need to set the following env
 | `WHITELISTED_USERS` | Allowed user IDs (comma-separated) | - |
 | `DALL_E_MODEL` | DALL-E model to use | dall-e-3 |
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL | - |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST Token | - |
+| `UPSTASH_REST_TOKEN` | Upstash Redis REST Token | - |
 | `SYSTEM_INIT_MESSAGE` | System initialization message | You are a helpful assistant. |
 | `SYSTEM_INIT_MESSAGE_ROLE` | System message role | system |
 | `GEMINI_API_KEY` | Google Gemini API key | - |
