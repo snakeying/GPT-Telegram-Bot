@@ -27,5 +27,12 @@
   "use_help_command": "Vous pouvez utiliser la commande /help pour les instructions d'utilisation.",
   "provide_image_description": "Veuillez fournir une description ou une question pour l'analyse de l'image.",
   "forgot_model_name": "Oups, avez-vous oublié d'entrer le nom du modèle ? Les modèles disponibles sont : {available_models}",
-  "invalid_model": "Oups, le nom du modèle est invalide ou la clé API n'est pas définie. Les modèles disponibles sont : {available_models}"
+  "invalid_model": "Oups, le nom du modèle est invalide ou la clé API n'est pas définie. Les modèles disponibles sont : {available_models}",
+  "cmd_start": "Initialiser le bot",
+  "cmd_new": "Démarrer une nouvelle conversation",
+  "cmd_history": "Voir l'historique des conversations",
+  "cmd_help": "Obtenir des informations d'aide",
+  "cmd_switchmodel": "Changer de modèle AI",
+  "cmd_img": "Générer une image",
+  "cmd_language": "Changer la langue de l'interface"
 }
