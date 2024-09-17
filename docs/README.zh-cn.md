@@ -106,7 +106,7 @@ GPT-Telegram-Bot/
 | `WHITELISTED_USERS` | 允许使用的用户 ID（逗号分隔） | - |
 | `DALL_E_MODEL` | 使用的 DALL-E 模型 | dall-e-3 |
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL | - |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST Token | - |
+| `UPSTASH_REST_TOKEN` | Upstash Redis REST Token | - |
 | `SYSTEM_INIT_MESSAGE` | 系统初始化消息 | You are a helpful assistant. |
 | `SYSTEM_INIT_MESSAGE_ROLE` | 系统消息角色 | system |
 | `GEMINI_API_KEY` | Google Gemini API 密钥 | - |
