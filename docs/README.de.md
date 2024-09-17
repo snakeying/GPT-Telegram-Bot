@@ -56,7 +56,7 @@ GPT-Telegram-Bot/
 
 - [Vercel](https://vercel.com/)-Konto
 - Telegram-Konto und Bot-Token
-- [Upstash](https://upstash.com/) Redis-Datenbank
+- [Upstash](https://upstash.com/) Bitte wählen Sie die Redis-Datenbank und aktivieren Sie die [Eviction](https://upstash.com/docs/redis/features/eviction)-Funktion
 - API-Schlüssel für mindestens einen KI-Dienst
 
 ### Bereitstellungsschritte
