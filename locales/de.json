@@ -27,7 +27,6 @@
   "use_help_command": "Sie können den Befehl /help für Nutzungsanweisungen verwenden.",
   "provide_image_description": "Bitte geben Sie eine Beschreibung oder Frage für die Bildanalyse an.",
   "forgot_model_name": "Ups, haben Sie vergessen, den Modellnamen einzugeben? Verfügbare Modelle sind: {available_models}",
-  "invalid_model": "Ups, der Modellname ist ungültig oder der API-Schlüssel ist nicht gesetzt. Verfügbare Modelle sind: {available_models}",
   "cmd_start": "Bot initialisieren",
   "cmd_new": "Neue Unterhaltung beginnen",
   "cmd_history": "Unterhaltungshistorie ansehen",

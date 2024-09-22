@@ -27,7 +27,6 @@
   "use_help_command": "请使用 /help 命令查看使用说明。",
   "provide_image_description": "请为图片分析提供一个描述或问题。",
   "forgot_model_name": "哎呀，您是不是忘记输入模型名称了？可用的模型有：{available_models}",
-  "invalid_model": "哎呀，模型名称无效或者API密钥未设置。可用的模型有：{available_models}",
   "cmd_start": "初始化机器人",
   "cmd_new": "开始新的对话",
   "cmd_history": "查看对话历史",
