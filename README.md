@@ -125,7 +125,7 @@ Make sure to add these environment variables to your project's environment confi
 
 - `/start` - Initialize the bot
 - `/new` - Start a new conversation
-- `/history` - View conversation history
+- `/history` - View conversation history summary
 - `/help` - Get help information
 - `/switchmodel <model name>` - Switch AI model
 - `/img <description> [size]` - Generate image
