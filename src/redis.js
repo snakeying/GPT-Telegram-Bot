@@ -6,54 +6,24 @@ const redis = new Redis({
   token: UPSTASH_REDIS_REST_TOKEN,
 });
 
-async function getConversationHistory(userId, page = 1, pageSize) {
+async function getConversationHistory(userId) {
   try {
     const key = `user:${userId}:history`;
     const history = await redis.get(key);
     console.log(`Retrieved raw history for user ${userId}:`, history);
     
-    let parsedHistory;
     if (typeof history === 'string') {
-      parsedHistory = JSON.parse(history);
+      return JSON.parse(history);
     } else if (Array.isArray(history)) {
-      parsedHistory = history;
+      return history;
     } else if (history && typeof history === 'object') {
-      parsedHistory = [history];
+      return [history];
     } else {
-      parsedHistory = [];
+      return [];
     }
-
-    if (pageSize) {
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      return parsedHistory.slice(startIndex, endIndex);
-    }
-
-    return parsedHistory;
   } catch (error) {
     console.error('Error getting conversation history:', error);
     return [];
-  }
-}
-
-async function getConversationHistoryPageCount(userId, pageSize) {
-  try {
-    const key = `user:${userId}:history`;
-    const history = await redis.get(key);
-    let historyLength = 0;
-    
-    if (typeof history === 'string') {
-      historyLength = JSON.parse(history).length;
-    } else if (Array.isArray(history)) {
-      historyLength = history.length;
-    } else if (history && typeof history === 'object') {
-      historyLength = 1;
-    }
-    
-    return pageSize ? Math.ceil(historyLength / pageSize) : 1;
-  } catch (error) {
-    console.error('Error getting conversation history page count:', error);
-    return 0;
   }
 }
 
@@ -87,9 +57,4 @@ async function clearConversationHistory(userId) {
   }
 }
 
-module.exports = { 
-  getConversationHistory, 
-  addToConversationHistory, 
-  clearConversationHistory,
-  getConversationHistoryPageCount 
-};
+module.exports = { getConversationHistory, addToConversationHistory, clearConversationHistory };
