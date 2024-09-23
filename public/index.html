@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT-Telegram-Bot Deployment</title>
+    <style>
+        :root {
+            --primary-color: #81c784;
+            --secondary-color: #64b5f6;
+            --background-color: #121212;
+            --text-color: #e0e0e0;
+            --container-bg: #1e1e1e;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .wrapper {
+            max-width: 800px;
+            width: 100%;
+            z-index: 1;
+        }
+        h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        h2 {
+            color: var(--secondary-color);
+            font-size: 1.5rem;
+        }
+        .container {
+            background-color: var(--container-bg);
+            border-radius: 8px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        a {
+            color: var(--secondary-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        a:hover {
+            color: #90caf9;
+            text-decoration: underline;
+        }
+        ol {
+            text-align: left;
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .github-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .github-link:hover {
+            background-color: #90caf9;
+            text-decoration: none;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            h2 {
+                font-size: 1.2rem;
+            }
+            .container {
+                padding: 20px;
+            }
+        }
+        /* Enhanced Fireworks styles */
+        .firework {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            animation: explode 1.5s ease-out forwards;
+        }
+        @keyframes explode {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: scale(40);
+                opacity: 0;
+            }
+        }
+        .spark {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            animation: spark 1s ease-out forwards;
+        }
+        @keyframes spark {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <h1>Deployment Successful! 🎉</h1>
+        <div class="container">
+            <p>Your GPT-Telegram-Bot has been successfully deployed to Vercel.</p>
+            <h2>Next Steps:</h2>
+            <ol>
+                <li>Set up your Telegram Webhook to connect your bot.</li>
+                <li>Configure your environment variables if you haven't already.</li>
+            </ol>
+            <p>For detailed instructions and troubleshooting, please refer to My GitHub repository:</p>
+            <a href="https://github.com/snakeying/GPT-Telegram-Bot" target="_blank" class="github-link">Visit GitHub Repository</a>
+            <p>Happy chatting with your new AI assistant! 🤖💬</p>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Fireworks effect
+        function createFirework() {
+            const firework = document.createElement('div');
+            firework.classList.add('firework');
+            firework.style.left = Math.random() * window.innerWidth + 'px';
+            firework.style.top = Math.random() * window.innerHeight + 'px';
+            const hue = Math.random() * 360;
+            firework.style.backgroundColor = `hsl(${hue}, 100%, 50%)`;
+            document.body.appendChild(firework);
+
+            // Create sparks
+            for (let i = 0; i < 20; i++) {
+                const spark = document.createElement('div');
+                spark.classList.add('spark');
+                spark.style.left = firework.style.left;
+                spark.style.top = firework.style.top;
+                spark.style.backgroundColor = `hsl(${hue}, 100%, ${50 + Math.random() * 50}%)`;
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 100 + Math.random() * 100;
+                spark.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+                spark.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+                document.body.appendChild(spark);
+                setTimeout(() => spark.remove(), 1000);
+            }
+
+            setTimeout(() => {
+                firework.remove();
+            }, 1500);
+        }
+
+        // Create fireworks every 300ms for 5 seconds
+        let fireworksInterval = setInterval(createFirework, 300);
+        setTimeout(() => {
+            clearInterval(fireworksInterval);
+        }, 5000);
+    </script>
+</body>
+</html>
