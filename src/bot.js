@@ -66,6 +66,7 @@ async function handleStart(msg) {
     console.log('Start message sent successfully');
   } catch (error) {
     console.error('Error sending start message:', error);
+    throw error;
   }
 }
 
@@ -79,6 +80,7 @@ async function handleNew(msg) {
     console.log('New conversation message sent successfully');
   } catch (error) {
     console.error('Error handling new conversation:', error);
+    throw error;
   }
 }
 
@@ -97,7 +99,7 @@ async function handleHistory(msg) {
     await bot.sendMessage(chatId, translate('history_intro', userLang) + historyText, {parse_mode: 'Markdown'});
   } catch (error) {
     console.error('Error retrieving conversation history:', error);
-    await bot.sendMessage(chatId, translate('error_message', userLang), {parse_mode: 'Markdown'});
+    throw error;
   }
 }
 
@@ -121,6 +123,7 @@ async function handleHelp(msg) {
     console.log('Help message sent successfully');
   } catch (error) {
     console.error('Error sending help message:', error);
+    throw error;
   }
 }
 
@@ -239,6 +242,14 @@ async function handleImageGeneration(msg) {
   }
 }
 
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
+
 async function handleStreamMessage(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
@@ -287,6 +298,22 @@ async function handleStreamMessage(msg) {
   let messageSent = false;
   let messageId;
 
+  const debouncedEditMessage = debounce(async (text) => {
+    try {
+      await bot.editMessageText(text, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: 'Markdown'
+      });
+    } catch (error) {
+      console.error('Error editing message:', error);
+      await bot.editMessageText(text, {
+        chat_id: chatId,
+        message_id: messageId
+      });
+    }
+  }, 500); // 500ms delay
+
   try {
     for await (const chunk of stream) {
       fullResponse += chunk;
@@ -295,30 +322,13 @@ async function handleStreamMessage(msg) {
         const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
         messageId = sentMsg.message_id;
         messageSent = true;
-      } else if (messageSent && fullResponse.length % 20 === 0) {
-        try {
-          await bot.editMessageText(fullResponse, {
-            chat_id: chatId,
-            message_id: messageId,
-            parse_mode: 'Markdown'
-          });
-        } catch (error) {
-          console.error('Error editing message:', error);
-          await bot.editMessageText(fullResponse, {
-            chat_id: chatId,
-            message_id: messageId
-          });
-        }
+      } else if (messageSent) {
+        debouncedEditMessage(fullResponse);
       }
     }
 
-    if (messageSent) {
-      await bot.editMessageText(fullResponse, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: 'Markdown'
-      });
-    }
+    // Ensure the last update is applied
+    await debouncedEditMessage.flush();
 
     await addToConversationHistory(userId, msg.text, fullResponse);
   } catch (error) {
@@ -379,6 +389,16 @@ async function handleLanguageChange(msg) {
   });
 }
 
+const commandHandlers = {
+  '/start': handleStart,
+  '/new': handleNew,
+  '/history': handleHistory,
+  '/help': handleHelp,
+  '/switchmodel': handleSwitchModel,
+  '/img': handleImageGeneration,
+  '/language': handleLanguageChange,
+};
+
 async function handleMessage(update) {
   if (update.callback_query) {
     await handleCallbackQuery(update.callback_query);
@@ -402,26 +422,18 @@ async function handleMessage(update) {
 
     const userLang = await getUserLanguage(userId);
 
-    if (msg.photo) {
+    if (msg.text && msg.text.startsWith('/')) {
+      const command = msg.text.split(' ')[0];
+      const handler = commandHandlers[command];
+      if (handler) {
+        await handler(msg);
+      } else {
+        await bot.sendMessage(chatId, translate('unknown_command', userLang), {parse_mode: 'Markdown'});
+      }
+    } else if (msg.photo) {
       await handleImageAnalysis(msg);
     } else if (msg.text) {
-      if (msg.text === '/start') {
-        await handleStart(msg);
-      } else if (msg.text === '/new') {
-        await handleNew(msg);
-      } else if (msg.text === '/history') {
-        await handleHistory(msg);
-      } else if (msg.text === '/help') {
-        await handleHelp(msg);
-      } else if (msg.text.startsWith('/switchmodel')) {
-        await handleSwitchModel(msg);
-      } else if (msg.text.startsWith('/img')) {
-        await handleImageGeneration(msg);
-      } else if (msg.text === '/language') {
-        await handleLanguageChange(msg);
-      } else {
-        await handleStreamMessage(msg);
-      }
+      await handleStreamMessage(msg);
     } else {
       console.log('Received unsupported message type');
       await bot.sendMessage(chatId, translate('unsupported_message', userLang), {parse_mode: 'Markdown'});
@@ -454,5 +466,5 @@ module.exports = {
   handleStart, 
   getMessageFromUpdate, 
   handleCallbackQuery,
-  updateBotCommands  // 导出新函数
+  updateBotCommands
 };
