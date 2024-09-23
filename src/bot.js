@@ -22,7 +22,7 @@ const { generateGeminiResponse } = require('./geminiApi');
 const { generateGroqResponse } = require('./groqapi');
 const { generateClaudeResponse } = require('./claude');
 const { generateAzureOpenAIResponse } = require('./azureOpenAI');
-const { getConversationHistory, addToConversationHistory, clearConversationHistory } = require('./redis');
+const { getConversationHistory, addToConversationHistory, clearConversationHistory, getSummarizedConversationHistory } = require('./redis');
 const { generateImage, VALID_SIZES } = require('./generateImage');
 const { handleImageUpload } = require('./uploadHandler');
 const { getUserLanguage, setUserLanguage, translate, supportedLanguages, getLocalizedCommands } = require('./localization');
@@ -87,16 +87,14 @@ async function handleHistory(msg) {
   const userId = msg.from.id;
   const userLang = await getUserLanguage(userId);
   try {
-    const history = await getConversationHistory(userId);
-    console.log('Processed history:', JSON.stringify(history, null, 2));
-    if (!Array.isArray(history) || history.length === 0) {
+    const summarizedHistory = await getSummarizedConversationHistory(userId);
+    if (!summarizedHistory) {
       await bot.sendMessage(chatId, translate('no_history', userLang), {parse_mode: 'Markdown'});
       return;
     }
-    const historyText = history.map(m => `${m.role}: ${m.content}`).join('\n\n');
-    await bot.sendMessage(chatId, translate('history_intro', userLang) + historyText, {parse_mode: 'Markdown'});
+    await bot.sendMessage(chatId, translate('history_intro', userLang) + summarizedHistory, {parse_mode: 'Markdown'});
   } catch (error) {
-    console.error('Error retrieving conversation history:', error);
+    console.error('Error retrieving summarized conversation history:', error);
     await bot.sendMessage(chatId, translate('error_message', userLang), {parse_mode: 'Markdown'});
   }
 }
