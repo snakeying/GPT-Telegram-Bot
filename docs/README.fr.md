@@ -125,7 +125,7 @@ Assurez-vous d'ajouter ces variables d'environnement à la configuration de votr
 
 - `/start` - Initialiser le bot
 - `/new` - Démarrer une nouvelle conversation
-- `/history` - Voir l'historique des conversations
+- `/history` - Voir le résumé de l'historique des conversations
 - `/help` - Obtenir des informations d'aide
 - `/switchmodel <nom du modèle>` - Changer de modèle d'IA
 - `/img <description> [taille]` - Générer une image

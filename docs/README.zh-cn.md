@@ -125,7 +125,7 @@ GPT-Telegram-Bot/
 
 - `/start` - 初始化机器人
 - `/new` - 开始新的对话
-- `/history` - 查看对话历史
+- `/history` - 查看对话历史摘要
 - `/help` - 获取帮助信息
 - `/switchmodel <模型名称>` - 切换 AI 模型
 - `/img <描述> [尺寸]` - 生成图像

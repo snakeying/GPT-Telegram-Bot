@@ -125,7 +125,7 @@ Stellen Sie sicher, dass Sie diese Umgebungsvariablen zur Umgebungskonfiguration
 
 - `/start` - Bot initialisieren
 - `/new` - Neue Konversation starten
-- `/history` - Konversationsverlauf anzeigen
+- `/history` - Gesprächsverlauf-Zusammenfassung anzeigen
 - `/help` - Hilfeinformationen erhalten
 - `/switchmodel <Modellname>` - KI-Modell wechseln
 - `/img <Beschreibung> [Größe]` - Bild generieren

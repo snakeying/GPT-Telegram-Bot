@@ -125,7 +125,7 @@ Asegúrate de añadir estas variables de entorno a la configuración de entorno 
 
 - `/start` - Inicializar el bot
 - `/new` - Iniciar una nueva conversación
-- `/history` - Ver el historial de conversación
+- `/history` - Ver resumen del historial de conversaciones
 - `/help` - Obtener información de ayuda
 - `/switchmodel <nombre del modelo>` - Cambiar el modelo de IA
 - `/img <descripción> [tamaño]` - Generar imagen
