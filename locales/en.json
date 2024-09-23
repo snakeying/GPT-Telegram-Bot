@@ -1,8 +1,8 @@
 {
   "welcome": "Hi~👋 You're currently using the {model} model. What can I do for you?",
   "new_conversation": "Alright, let's start over! You're now using the {model} model. All previous conversation history has been cleared.",
-  "no_history": "Oops, I couldn't find any conversation history.",
-  "history_intro": "Here's your conversation history:\n\n",
+  "history_intro": "Here's a summary of our conversation history:\n\n",
+  "no_history": "Oops, I couldn't find any conversation history to summarize.",
   "help_message": "Hey, welcome to your personal assistant bot! 👋 Here's a user guide:\n\n🚀 Basic commands:\n/start - Say hi and start chatting\n/new - Want to start over? This command clears previous conversation history\n/history - Review what we've talked about\n/switchmodel [model name] - Switch to a different model\n/img [description] [size] - Let me draw an image for you!\n/language - Change language settings\n\n💬 Daily chat:\nJust send me a message, and I'll reply using the current AI model~\n\n🎨 Image generation:\n- Use the /img command, followed by your image description\n- Want a specific size? Add the size at the end (e.g., 1024x1024, 1792x1024, 1024x1792)\n- Example: /img A cute kitten playing in the sunshine 1024x1024\n\n🔍 Image analysis:\n- Send me an image (with or without text description)\n- I'll analyze it carefully and tell you what I see\n\n🤖 Currently available AI models:\n{models}\n\n😎 Currently using model: {current_model}\n\nAny questions or suggestions? Feel free to tell my admin~\n\nCome on, let's start an interesting conversation! ✨",
   "model_switched": "Model switched to: {model}. Previous conversation history has been cleared.",
   "invalid_model": "Oops, the model name is invalid or the API key is not set. Available models are: {available_models}",
@@ -29,9 +29,9 @@
   "forgot_model_name": "Oops, you forgot to input the model name? Available models are: {available_models}",
   "cmd_start": "Initialize the bot",
   "cmd_new": "Start a new conversation",
-  "cmd_history": "View conversation history",
   "cmd_help": "Get help information",
   "cmd_switchmodel": "Switch AI model",
   "cmd_img": "Generate image",
-  "cmd_language": "Switch interface language"
+  "cmd_language": "Switch interface language",
+  "cmd_history": "View conversation history summary"
 }
