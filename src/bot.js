@@ -327,9 +327,6 @@ async function handleStreamMessage(msg) {
       }
     }
 
-    // Ensure the last update is applied
-    await debouncedEditMessage.flush();
-
     await addToConversationHistory(userId, msg.text, fullResponse);
   } catch (error) {
     console.error('Error in stream processing:', error);
