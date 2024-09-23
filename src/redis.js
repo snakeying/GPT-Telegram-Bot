@@ -1,5 +1,6 @@
 const { Redis } = require('@upstash/redis');
 const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, MAX_HISTORY_LENGTH } = require('./config');
+const { generateResponse } = require('./api');
 
 const redis = new Redis({
   url: UPSTASH_REDIS_REST_URL,
@@ -57,4 +58,30 @@ async function clearConversationHistory(userId) {
   }
 }
 
-module.exports = { getConversationHistory, addToConversationHistory, clearConversationHistory };
+async function getSummarizedConversationHistory(userId) {
+  try {
+    const history = await getConversationHistory(userId);
+    if (history.length === 0) {
+      return null;
+    }
+    
+    // Prepare the prompt for summarization
+    const historyText = history.map(m => `${m.role}: ${m.content}`).join('\n\n');
+    const summarizationPrompt = `Please summarize the following conversation history concisely:\n\n${historyText}\n\nSummary:`;
+    
+    // Generate summary using the current model
+    const summary = await generateResponse(summarizationPrompt, []);
+    
+    return summary.trim();
+  } catch (error) {
+    console.error('Error summarizing conversation history:', error);
+    return null;
+  }
+}
+
+module.exports = { 
+  getConversationHistory, 
+  addToConversationHistory, 
+  clearConversationHistory,
+  getSummarizedConversationHistory
+};
