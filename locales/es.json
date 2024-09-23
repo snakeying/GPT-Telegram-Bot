@@ -1,8 +1,6 @@
 {
   "welcome": "¡Hola~👋 Actualmente estás usando el modelo {model}. ¿En qué puedo ayudarte?",
-  "new_conversation": "¡De acuerdo, empecemos de nuevo! Ahora estás usando el modelo {model}. Todo el historial de conversación anterior ha sido borrado.",
-  "no_history": "Ups, no pude encontrar ningún historial de conversación.",
-  "history_intro": "Aquí está tu historial de conversación:\n\n",
+  "new_conversation": "¡De acuerdo, empecemos de nuevo! Ahora estás usando el modelo {model}. Todo el historial de conversación anterior ha sido borrado.","history_intro": "Aquí tienes un resumen de tu historial de conversaciones:\n\n","no_history": "Ups, no pude encontrar ningún historial de conversaciones para resumir.",
   "help_message": "¡Hola, bienvenido a tu bot asistente personal! 👋 Aquí tienes una guía de usuario:\n\n🚀 Comandos básicos:\n/start - Saluda y comienza a chatear\n/new - ¿Quieres empezar de nuevo? Este comando borra el historial de conversación anterior\n/history - Revisa de qué hemos hablado\n/switchmodel [nombre del modelo] - Cambia a un modelo diferente\n/img [descripción] [tamaño] - ¡Déjame dibujar una imagen para ti!\n/language - Cambia la configuración de idioma\n\n💬 Chat diario:\nSolo envíame un mensaje y te responderé usando el modelo de IA actual~\n\n🎨 Generación de imágenes:\n- Usa el comando /img, seguido de tu descripción de la imagen\n- ¿Quieres un tamaño específico? Añade el tamaño al final (ej. 1024x1024, 1792x1024, 1024x1792)\n- Ejemplo: /img Un lindo gatito jugando bajo el sol 1024x1024\n\n🔍 Análisis de imágenes:\n- Envíame una imagen (con o sin descripción de texto)\n- La analizaré cuidadosamente y te diré lo que veo\n\n🤖 Modelos de IA actualmente disponibles:\n{models}\n\n😎 Modelo en uso actualmente: {current_model}\n\n¿Alguna pregunta o sugerencia? ¡No dudes en decírselo a mi administrador~\n\n¡Vamos, comencemos una conversación interesante! ✨",
   "model_switched": "Modelo cambiado a: {model}. El historial de conversación anterior ha sido borrado.",
   "invalid_model": "Ups, el nombre del modelo no es válido o la clave API no está configurada. Los modelos disponibles son: {available_models}",
@@ -29,7 +27,7 @@
   "forgot_model_name": "Ups, ¿olvidaste introducir el nombre del modelo? Los modelos disponibles son: {available_models}",
   "cmd_start": "Inicializar el bot",
   "cmd_new": "Iniciar una nueva conversación",
-  "cmd_history": "Ver historial de conversaciones",
+  "cmd_history": "Ver resumen del historial de conversaciones",
   "cmd_help": "Obtener información de ayuda",
   "cmd_switchmodel": "Cambiar modelo de IA",
   "cmd_img": "Generar imagen",
