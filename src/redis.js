@@ -6,7 +6,7 @@ const redis = new Redis({
   token: UPSTASH_REDIS_REST_TOKEN,
 });
 
-async function getConversationHistory(userId, page = 1, pageSize = 10) {
+async function getConversationHistory(userId, page = 1, pageSize) {
   try {
     const key = `user:${userId}:history`;
     const history = await redis.get(key);
@@ -23,16 +23,20 @@ async function getConversationHistory(userId, page = 1, pageSize = 10) {
       parsedHistory = [];
     }
 
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return parsedHistory.slice(startIndex, endIndex);
+    if (pageSize) {
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      return parsedHistory.slice(startIndex, endIndex);
+    }
+
+    return parsedHistory;
   } catch (error) {
     console.error('Error getting conversation history:', error);
     return [];
   }
 }
 
-async function getConversationHistoryPageCount(userId, pageSize = 10) {
+async function getConversationHistoryPageCount(userId, pageSize) {
   try {
     const key = `user:${userId}:history`;
     const history = await redis.get(key);
@@ -46,7 +50,7 @@ async function getConversationHistoryPageCount(userId, pageSize = 10) {
       historyLength = 1;
     }
     
-    return Math.ceil(historyLength / pageSize);
+    return pageSize ? Math.ceil(historyLength / pageSize) : 1;
   } catch (error) {
     console.error('Error getting conversation history page count:', error);
     return 0;
