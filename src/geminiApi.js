@@ -3,24 +3,6 @@ const { GEMINI_API_KEY, GEMINI_ENDPOINT, SYSTEM_INIT_MESSAGE, SYSTEM_INIT_MESSAG
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY, GEMINI_ENDPOINT);
 
-function sanitizeMarkdown(text) {
-  const specialChars = ['*', '_', '`', '['];
-  let sanitized = text;
-  
-  specialChars.forEach(char => {
-    const regex = new RegExp(`(?<!\\${char})\\${char}(?!\\${char})`, 'g');
-    sanitized = sanitized.replace(regex, `\\${char}`);
-  });
-
-  sanitized = sanitized
-    .replace(/\]/g, '\\]')
-    .replace(/\)/g, '\\)')
-    .replace(/>/g, '\\>')
-    .replace(/#/g, '\\#');
-
-  return sanitized;
-}
-
 async function generateGeminiResponse(prompt, conversationHistory, model) {
   try {
     const geminiModel = genAI.getGenerativeModel({ model: model });
@@ -40,7 +22,7 @@ async function generateGeminiResponse(prompt, conversationHistory, model) {
 
     const result = await chat.sendMessage(prompt);
     const response = result.response;
-    return sanitizeMarkdown(response.text());
+    return response.text();
   } catch (error) {
     console.error('Error in generateGeminiResponse:', error);
     throw new Error(`Failed to generate Gemini response: ${error.message}`);
