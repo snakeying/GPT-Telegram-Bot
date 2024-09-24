@@ -47,6 +47,22 @@ function getMessageFromUpdate(update) {
   return update.message || update.edited_message;
 }
 
+async function sendMessageWithFallback(chatId, text, parseMode = 'Markdown') {
+  try {
+    await bot.sendMessage(chatId, text, { parse_mode: parseMode });
+  } catch (error) {
+    console.error('Error sending message with Markdown:', error);
+    try {
+      // 移除 Markdown 语法
+      const plainText = text.replace(/[*_`\[\]()~>#+=|{}.!-]/g, '');
+      await bot.sendMessage(chatId, plainText);
+    } catch (secondError) {
+      console.error('Error sending plain text message:', secondError);
+      throw new Error('Failed to send message in any format');
+    }
+  }
+}
+
 async function updateBotCommands(userId) {
   const commands = await getLocalizedCommands(userId);
   try {
@@ -248,23 +264,23 @@ async function handleStreamMessage(msg) {
   if (GROQ_MODELS.includes(currentModel) && GROQ_API_KEY) {
     try {
       const response = await generateGroqResponse(msg.text, conversationHistory, currentModel);
-      await bot.sendMessage(chatId, response, {parse_mode: 'Markdown'});
+      await sendMessageWithFallback(chatId, response);
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Groq processing:', error);
-      await bot.sendMessage(chatId, translate('error_message', userLang), {parse_mode: 'Markdown'});
+      await sendMessageWithFallback(chatId, translate('error_message', userLang));
     }
     return;
   }
-
+  
   if (GOOGLE_MODELS.includes(currentModel) && GEMINI_API_KEY) {
     try {
       const response = await generateGeminiResponse(msg.text, conversationHistory, currentModel);
-      await bot.sendMessage(chatId, response, {parse_mode: 'Markdown'});
+      await sendMessageWithFallback(chatId, response);
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Gemini processing:', error);
-      await bot.sendMessage(chatId, translate('error_message', userLang), {parse_mode: 'Markdown'});
+      await sendMessageWithFallback(chatId, translate('error_message', userLang));
     }
     return;
   }
