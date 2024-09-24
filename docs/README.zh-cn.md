@@ -28,27 +28,43 @@ GPT-Telegram-Bot 是一个功能强大的 Telegram 机器人，集成了多种 A
 
 ```
 GPT-Telegram-Bot/
-├── api/                 # API 相关配置
-│   └── telegram.js      # 处理 Telegram bot 交互
-├── src/                 # 源代码
-│   ├── bot.js           # 主要的 Telegram bot 逻辑
-│   ├── api.js           # 处理 API 交互
-│   ├── config.js        # 配置文件
-│   ├── uploadhandler.js # 处理图片上传
-│   └── redis.js         # Upstash Redis 数据库功能
-├── locales/             # 多语言支持文件
-├── package.json         # 项目依赖
-├── vercel.json          # Vercel 配置文件
-└── .gitignore           # Git 忽略文件
+├── api/                # api相关配置
+│   ├── telegram.js     # 处理Telegram bot交互
+├── src/                # 源代码
+│   ├── api.js          # 处理兼容OpenAI的API交互
+│   ├── bot.js          # 主要的Telegram bot逻辑
+│   ├── config.js       # 配置文件
+│   ├── azureOpenAI.js  # 处理azureOpenAI交互
+│   ├── claude.js       # 处理claude交互
+│   ├── generateImage.js# 处理DALL·E交互
+│   ├── geminiApi.js    # 处理Gemini交互
+│   ├── groqapi.js      # 处理Groq交互
+│   ├── uploadhandler.js# 上传图片处理相关逻辑
+│   ├── localization.js # 多语言支持逻辑
+│   ├── redis.js        # upstash redis数据库功能
+├── locales/            # 多语言支持文件
+│   ├── en.json         
+│   ├── zh-cn.json      
+│   ├── zh-hant.json    
+│   └── ja.json         
+│   └── es.json         
+│   └── fr.json         
+│   └── ru.json         
+│   └── de.json         
+├── docs/               # 多语言 README 文件目录
+│   ├── README.zh-cn.md 
+│   ├── README.zh-hant.md
+│   ├── README.ja.md    
+│   ├── README.es.md    
+│   ├── README.fr.md    
+│   ├── README.ru.md    
+│   └── README.de.md    
+├── public/             # 部署完成后的vercel网页
+│   └── index.html      # 网页入口文件
+├── package.json        # 项目依赖
+├── vercel.json         # Vercel配置文件
+└── README.md           # 项目说明文件
 ```
-
-- `api/telegram.js`: 处理来自 Telegram 的 webhook 请求
-- `src/bot.js`: 包含主要的机器人逻辑和命令处理
-- `src/api.js`: 管理与不同 AI 服务的 API 交互
-- `src/config.js`: 存储项目配置和环境变量
-- `src/uploadhandler.js`: 处理图片上传和分析功能
-- `src/redis.js`: 管理与 Upstash Redis 的交互，用于存储对话历史
-- `locales/`: 包含不同语言的翻译文件，支持多语言功能
 
 ## 快速开始 🚀
 

@@ -28,27 +28,43 @@ GPT-Telegram-Bot は、さまざまな AI モデルを統合し、インテリ�
 
 ```
 GPT-Telegram-Bot/
-├── api/                 # API 関連の設定
-│   └── telegram.js      # Telegram ボットの対話を処理
-├── src/                 # ソースコード
-│   ├── bot.js           # Telegram ボットの主要なロジック
-│   ├── api.js           # API 対話の処理
-│   ├── config.js        # 設定ファイル
-│   ├── uploadhandler.js # 画像アップロードの処理
-│   └── redis.js         # Upstash Redis データベース機能
-├── locales/             # 多言語サポートファイル
-├── package.json         # プロジェクトの依存関係
-├── vercel.json          # Vercel 設定ファイル
-└── .gitignore           # Git 無視ファイル
+├── api/                # API関連の設定
+│   ├── telegram.js     # Telegramボットのインタラクションを処理
+├── src/                # ソースコード
+│   ├── api.js          # OpenAI互換APIとのインタラクションを処理
+│   ├── bot.js          # Telegramボットのメインロジック
+│   ├── config.js       # 設定ファイル
+│   ├── azureOpenAI.js  # Azure OpenAIとのインタラクションを処理
+│   ├── claude.js       # Claudeとのインタラクションを処理
+│   ├── generateImage.js# DALL·Eとのインタラクションを処理
+│   ├── geminiApi.js    # Geminiとのインタラクションを処理
+│   ├── groqapi.js      # Groqとのインタラクションを処理
+│   ├── uploadhandler.js# 画像のアップロードと解析ロジックを処理
+│   ├── localization.js # 多言語サポートを処理
+│   ├── redis.js        # Upstash Redisデータベース機能
+├── locales/            # 多言語サポートファイル
+│   ├── en.json         
+│   ├── zh-cn.json      
+│   ├── zh-hant.json    
+│   └── ja.json         
+│   └── es.json         
+│   └── fr.json         
+│   └── ru.json         
+│   └── de.json         
+├── docs/               # 多言語READMEファイル
+│   ├── README.zh-cn.md 
+│   ├── README.zh-hant.md
+│   ├── README.ja.md    
+│   ├── README.es.md    
+│   ├── README.fr.md    
+│   ├── README.ru.md    
+│   └── README.de.md    
+├── public/             # デプロイ後のVercelウェブページ
+│   └── index.html      # ウェブページのエントリファイル
+├── package.json        # プロジェクトの依存関係
+├── vercel.json         # Vercel設定ファイル
+└── README.md           # プロジェクトの説明ファイル
 ```
-
-- `api/telegram.js`: Telegram からの webhook リクエストを処理
-- `src/bot.js`: ボットの主要なロジックとコマンド処理を含む
-- `src/api.js`: 異なる AI サービスとの API 対話を管理
-- `src/config.js`: プロジェクトの設定と環境変数を格納
-- `src/uploadhandler.js`: 画像アップロードと分析機能を処理
-- `src/redis.js`: Upstash Redis との対話を管理し、会話履歴を保存
-- `locales/`: 異なる言語の翻訳ファイルを含み、多言語機能をサポート
 
 ## クイックスタート 🚀
 

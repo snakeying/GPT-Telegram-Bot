@@ -28,27 +28,43 @@ GPT-Telegram-Bot 是一個功能強大的 Telegram 機器人，整合了多種 A
 
 ```
 GPT-Telegram-Bot/
-├── api/                 # API 相關配置
-│   └── telegram.js      # 處理 Telegram bot 互動
-├── src/                 # 原始碼
-│   ├── bot.js           # 主要的 Telegram bot 邏輯
-│   ├── api.js           # 處理 API 互動
-│   ├── config.js        # 設定檔
-│   ├── uploadhandler.js # 處理圖片上傳
-│   └── redis.js         # Upstash Redis 資料庫功能
-├── locales/             # 多語言支援檔案
-├── package.json         # 專案相依套件
-├── vercel.json          # Vercel 設定檔
-└── .gitignore           # Git 忽略檔案
+├── api/                # API 相關配置
+│   ├── telegram.js     # 處理 Telegram 機器人互動
+├── src/                # 原始碼
+│   ├── api.js          # 處理與 OpenAI 相容的 API 互動
+│   ├── bot.js          # Telegram 機器人的主要邏輯
+│   ├── config.js       # 配置文件
+│   ├── azureOpenAI.js  # 處理與 Azure OpenAI 的互動
+│   ├── claude.js       # 處理與 Claude 的互動
+│   ├── generateImage.js# 處理與 DALL·E 的互動
+│   ├── geminiApi.js    # 處理與 Gemini 的互動
+│   ├── groqapi.js      # 處理與 Groq 的互動
+│   ├── uploadhandler.js# 處理圖片上傳和分析邏輯
+│   ├── localization.js # 處理多語言支援
+│   ├── redis.js        # Upstash Redis 資料庫功能
+├── locales/            # 多語言支援文件
+│   ├── en.json         
+│   ├── zh-cn.json      
+│   ├── zh-hant.json    
+│   └── ja.json         
+│   └── es.json         
+│   └── fr.json         
+│   └── ru.json         
+│   └── de.json         
+├── docs/               # 多語言 README 文件
+│   ├── README.zh-cn.md 
+│   ├── README.zh-hant.md
+│   ├── README.ja.md    
+│   ├── README.es.md    
+│   ├── README.fr.md    
+│   ├── README.ru.md    
+│   └── README.de.md    
+├── public/             # 部署完成後的 Vercel 網頁
+│   └── index.html      # 網頁入口文件
+├── package.json        # 專案依賴
+├── vercel.json         # Vercel 配置文件
+└── README.md           # 專案說明文件
 ```
-
-- `api/telegram.js`: 處理來自 Telegram 的 webhook 請求
-- `src/bot.js`: 包含主要的機器人邏輯和指令處理
-- `src/api.js`: 管理與不同 AI 服務的 API 互動
-- `src/config.js`: 儲存專案設定和環境變數
-- `src/uploadhandler.js`: 處理圖片上傳和分析功能
-- `src/redis.js`: 管理與 Upstash Redis 的互動，用於儲存對話歷史
-- `locales/`: 包含不同語言的翻譯檔案，支援多語言功能
 
 ## 快速開始 🚀
 

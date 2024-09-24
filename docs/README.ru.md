@@ -28,27 +28,43 @@ GPT-Telegram-Bot — это мощный Telegram-бот, интегрирующ
 
 ```
 GPT-Telegram-Bot/
-├── api/                 # Конфигурации, связанные с API
-│   └── telegram.js      # Обработка взаимодействий Telegram-бота
-├── src/                 # Исходный код
-│   ├── bot.js           # Основная логика Telegram-бота
-│   ├── api.js           # Обработка взаимодействий с API
-│   ├── config.js        # Конфигурационный файл
-│   ├── uploadhandler.js # Обработка загрузки изображений
-│   └── redis.js         # Функционал базы данных Upstash Redis
-├── locales/             # Файлы многоязычной поддержки
-├── package.json         # Зависимости проекта
-├── vercel.json          # Конфигурационный файл Vercel
-└── .gitignore           # Файл игнорирования Git
+├── api/                # Конфигурация, связанная с API
+│   ├── telegram.js     # Обрабатывает взаимодействия с ботом Telegram
+├── src/                # Исходный код
+│   ├── api.js          # Обрабатывает взаимодействия с совместимыми с OpenAI API
+│   ├── bot.js          # Основная логика бота Telegram
+│   ├── config.js       # Файл конфигурации
+│   ├── azureOpenAI.js  # Обрабатывает взаимодействия с Azure OpenAI
+│   ├── claude.js       # Обрабатывает взаимодействия с Claude
+│   ├── generateImage.js# Обрабатывает взаимодействия с DALL·E
+│   ├── geminiApi.js    # Обрабатывает взаимодействия с Gemini
+│   ├── groqapi.js      # Обрабатывает взаимодействия с Groq
+│   ├── uploadhandler.js# Обрабатывает логику загрузки и анализа изображений
+│   ├── localization.js # Обрабатывает многоязычную поддержку
+│   ├── redis.js        # Функциональность базы данных Upstash Redis
+├── locales/            # Файлы многоязычной поддержки
+│   ├── en.json         
+│   ├── zh-cn.json      
+│   ├── zh-hant.json    
+│   └── ja.json         
+│   └── es.json         
+│   └── fr.json         
+│   └── ru.json         
+│   └── de.json         
+├── docs/               # Многоязычные файлы README
+│   ├── README.zh-cn.md 
+│   ├── README.zh-hant.md
+│   ├── README.ja.md    
+│   ├── README.es.md    
+│   ├── README.fr.md    
+│   ├── README.ru.md    
+│   └── README.de.md    
+├── public/             # Веб-страница Vercel после развертывания
+│   └── index.html      # Входной файл веб-страницы
+├── package.json        # Зависимости проекта
+├── vercel.json         # Файл конфигурации Vercel
+└── README.md           # Файл описания проекта
 ```
-
-- `api/telegram.js`: Обрабатывает webhook-запросы от Telegram
-- `src/bot.js`: Содержит основную логику бота и обработку команд
-- `src/api.js`: Управляет взаимодействиями API с различными службами ИИ
-- `src/config.js`: Хранит конфигурации проекта и переменные окружения
-- `src/uploadhandler.js`: Обрабатывает функционал загрузки и анализа изображений
-- `src/redis.js`: Управляет взаимодействиями с Upstash Redis, используемым для хранения истории разговоров
-- `locales/`: Содержит файлы переводов для разных языков, поддерживая многоязычный функционал
 
 ## Быстрый старт 🚀
 
