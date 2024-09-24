@@ -1,6 +1,12 @@
 const { Redis } = require('@upstash/redis');
 const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, MAX_HISTORY_LENGTH } = require('./config');
 const { generateResponse } = require('./api');
+const { generateResponse } = require('./api');
+const { generateGeminiResponse } = require('./geminiApi');
+const { generateGroqResponse } = require('./groqapi');
+const { generateClaudeResponse } = require('./claude');
+const { generateAzureOpenAIResponse } = require('./azureOpenAI');
+const { OPENAI_MODELS, GOOGLE_MODELS, GROQ_MODELS, CLAUDE_MODELS, AZURE_OPENAI_MODELS } = require('./config');
 
 const redis = new Redis({
   url: UPSTASH_REDIS_REST_URL,
@@ -64,14 +70,27 @@ async function getSummarizedConversationHistory(userId, currentModel) {
     if (history.length === 0) {
       return null;
     }
-
+    
     // Prepare the prompt for summarization
     const historyText = history.map(m => `${m.role}: ${m.content}`).join('\n\n');
     const summarizationPrompt = `Please summarize the following conversation history concisely:\n\n${historyText}\n\nSummary:`;
-
+    
     // Generate summary using the current model
-    const summary = await generateResponse(summarizationPrompt, [], currentModel);
-
+    let summary;
+    if (OPENAI_MODELS.includes(currentModel)) {
+      summary = await generateResponse(summarizationPrompt, [], currentModel);
+    } else if (GOOGLE_MODELS.includes(currentModel)) {
+      summary = await generateGeminiResponse(summarizationPrompt, [], currentModel);
+    } else if (GROQ_MODELS.includes(currentModel)) {
+      summary = await generateGroqResponse(summarizationPrompt, [], currentModel);
+    } else if (CLAUDE_MODELS.includes(currentModel)) {
+      summary = await generateClaudeResponse(summarizationPrompt, [], currentModel);
+    } else if (AZURE_OPENAI_MODELS.includes(currentModel)) {
+      summary = await generateAzureOpenAIResponse(summarizationPrompt, [], currentModel);
+    } else {
+      throw new Error('Unsupported model for summarization');
+    }
+    
     return summary.trim();
   } catch (error) {
     console.error('Error summarizing conversation history:', error);
