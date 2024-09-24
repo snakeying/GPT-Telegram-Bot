@@ -21,7 +21,8 @@ async function generateGroqResponse(prompt, conversationHistory, model) {
       }
     );
 
-    return response.data.choices[0].message.content;
+    console.log('Raw Groq response:', JSON.stringify(response.data));
+    return response.data.choices[0].message.content;  // 不在这里应用 escapeMarkdown
   } catch (error) {
     console.error('Error in generateGroqResponse:', error);
     throw new Error(`Failed to generate Groq response: ${error.message}`);

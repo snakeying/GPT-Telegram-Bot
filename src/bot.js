@@ -27,25 +27,6 @@ const { generateImage, VALID_SIZES } = require('./generateImage');
 const { handleImageUpload } = require('./uploadHandler');
 const { getUserLanguage, setUserLanguage, translate, supportedLanguages, getLocalizedCommands } = require('./localization');
 
-function escapeMarkdown(text) {
-  return text
-    .replace(/\\/g, '\\\\') 
-    .replace(/\*/g, '\\*')  
-    .replace(/\_/g, '\\_') 
-    .replace(/\~/g, '\\~') 
-    .replace(/\`/g, '\\`') 
-    .replace(/\>/g, '\\>') 
-    .replace(/\#/g, '\\#')  
-    .replace(/\+/g, '\\+') 
-    .replace(/\-/g, '\\-')  
-    .replace(/\=/g, '\\=') 
-    .replace(/\|/g, '\\|')  
-    .replace(/\{/g, '\\{') 
-    .replace(/\}/g, '\\}') 
-    .replace(/\./g, '\\.') 
-    .replace(/\!/g, '\\!'); 
-}
-
 let currentModel = OPENAI_API_KEY ? DEFAULT_MODEL : null;
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
@@ -58,6 +39,11 @@ const redis = new Redis({
   url: UPSTASH_REDIS_REST_URL,
   token: UPSTASH_REDIS_REST_TOKEN,
 });
+
+function escapeMarkdown(text) {
+  const escapeChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+  return escapeChars.reduce((acc, char) => acc.replace(new RegExp('\\' + char, 'g'), '\\' + char), text);
+}
 
 function getMessageFromUpdate(update) {
   if (update.callback_query) {
@@ -266,9 +252,12 @@ async function handleStreamMessage(msg) {
 
   if (GROQ_MODELS.includes(currentModel) && GROQ_API_KEY) {
     try {
+      console.log('Generating Groq response for message:', msg.text);
       const response = await generateGroqResponse(msg.text, conversationHistory, currentModel);
-      const formattedResponse = escapeMarkdown(response);
-      await bot.sendMessage(chatId, formattedResponse, {parse_mode: 'Markdown'});
+      console.log('Groq response before escaping:', response);
+      const escapedResponse = escapeMarkdown(response);
+      console.log('Groq response after escaping:', escapedResponse);
+      await bot.sendMessage(chatId, escapedResponse, {parse_mode: 'Markdown'});
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Groq processing:', error);
@@ -276,12 +265,15 @@ async function handleStreamMessage(msg) {
     }
     return;
   }
-  
+
   if (GOOGLE_MODELS.includes(currentModel) && GEMINI_API_KEY) {
     try {
+      console.log('Generating Gemini response for message:', msg.text);
       const response = await generateGeminiResponse(msg.text, conversationHistory, currentModel);
-      const formattedResponse = escapeMarkdown(response);
-      await bot.sendMessage(chatId, formattedResponse, {parse_mode: 'Markdown'});
+      console.log('Gemini response before escaping:', response);
+      const escapedResponse = escapeMarkdown(response);
+      console.log('Gemini response after escaping:', escapedResponse);
+      await bot.sendMessage(chatId, escapedResponse, {parse_mode: 'Markdown'});
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Gemini processing:', error);
