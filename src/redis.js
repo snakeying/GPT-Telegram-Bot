@@ -1,7 +1,6 @@
 const { Redis } = require('@upstash/redis');
 const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, MAX_HISTORY_LENGTH } = require('./config');
 const { generateResponse } = require('./api');
-const { generateResponse } = require('./api');
 const { generateGeminiResponse } = require('./geminiApi');
 const { generateGroqResponse } = require('./groqapi');
 const { generateClaudeResponse } = require('./claude');
