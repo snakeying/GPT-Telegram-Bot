@@ -372,6 +372,44 @@ async function handleStreamMessage(msg) {
   }
 }
 
+async function handleImageAnalysis(msg) {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
+  const userLang = await getUserLanguage(userId);
+
+  if (!OPENAI_API_KEY) {
+    await bot.sendMessage(chatId, translate('no_api_key', userLang));
+    return;
+  }
+
+  // Check if a photo is attached
+  const photo = msg.photo && msg.photo[msg.photo.length - 1];
+  if (!photo) {
+    await bot.sendMessage(chatId, translate('no_image', userLang));
+    return;
+  }
+
+  // Get the prompt from the caption or wait for it
+  let prompt = msg.caption;
+  if (!prompt) {
+    await bot.sendMessage(chatId, translate('provide_image_description', userLang));
+    // Wait for the next message to be the prompt
+    const promptMsg = await new Promise(resolve => bot.once('message', resolve));
+    prompt = promptMsg.text;
+  }
+
+  await bot.sendMessage(chatId, translate('processing_image', userLang));
+
+  try {
+    const fileInfo = await bot.getFile(photo.file_id);
+    const result = await handleImageUpload(fileInfo, prompt, currentModel);
+    await bot.sendMessage(chatId, result, { parse_mode: 'Markdown' });
+  } catch (error) {
+    console.error('Error in image analysis:', error);
+    await bot.sendMessage(chatId, translate('error_message', userLang));
+  }
+}
+
 async function handleLanguageChange(msg) {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
