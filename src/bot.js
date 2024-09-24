@@ -40,18 +40,6 @@ const redis = new Redis({
   token: UPSTASH_REDIS_REST_TOKEN,
 });
 
-function cleanMarkdown(text) {
-  let cleaned = text.replace(/\*\*/g, '*')
-                    .replace(/`{3,}/g, '```') 
-                    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 ($2)');  
-  const openMarks = (cleaned.match(/(\*|_|`)/g) || []).length;
-  if (openMarks % 2 !== 0) {
-    cleaned += '*'.repeat(openMarks % 2);
-  }
-
-  return cleaned;
-}
-
 function getMessageFromUpdate(update) {
   if (update.callback_query) {
     return update.callback_query.message;
@@ -260,25 +248,23 @@ async function handleStreamMessage(msg) {
   if (GROQ_MODELS.includes(currentModel) && GROQ_API_KEY) {
     try {
       const response = await generateGroqResponse(msg.text, conversationHistory, currentModel);
-      const cleanedResponse = cleanMarkdown(response);
-      await bot.sendMessage(chatId, cleanedResponse, {parse_mode: 'Markdown'});
+      await bot.sendMessage(chatId, response, {parse_mode: 'Markdown'});
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Groq processing:', error);
-      await bot.sendMessage(chatId, translate('error_message', userLang));
+      await bot.sendMessage(chatId, translate('error_message', userLang), {parse_mode: 'Markdown'});
     }
     return;
   }
-  
+
   if (GOOGLE_MODELS.includes(currentModel) && GEMINI_API_KEY) {
     try {
       const response = await generateGeminiResponse(msg.text, conversationHistory, currentModel);
-      const cleanedResponse = cleanMarkdown(response);
-      await bot.sendMessage(chatId, cleanedResponse, {parse_mode: 'Markdown'});
+      await bot.sendMessage(chatId, response, {parse_mode: 'Markdown'});
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Gemini processing:', error);
-      await bot.sendMessage(chatId, translate('error_message', userLang));
+      await bot.sendMessage(chatId, translate('error_message', userLang), {parse_mode: 'Markdown'});
     }
     return;
   }
@@ -298,51 +284,50 @@ async function handleStreamMessage(msg) {
   let fullResponse = '';
   let messageSent = false;
   let messageId;
-  
+  let lastSentResponse = '';
+
   try {
     for await (const chunk of stream) {
       fullResponse += chunk;
-      const cleanedResponse = cleanMarkdown(fullResponse);
-  
-      if (cleanedResponse.length > 0 && !messageSent) {
+
+      if (fullResponse.length > 0 && !messageSent) {
+        const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
+        messageId = sentMsg.message_id;
+        messageSent = true;
+      } else if (messageSent && fullResponse !== lastSentResponse) {
         try {
-          const sentMsg = await bot.sendMessage(chatId, cleanedResponse, {parse_mode: 'Markdown'});
-          messageId = sentMsg.message_id;
-          messageSent = true;
-        } catch (error) {
-          console.error('Error sending message:', error);
-          await bot.sendMessage(chatId, cleanedResponse);
-        }
-      } else if (messageSent && cleanedResponse.length % 20 === 0) {
-        try {
-          await bot.editMessageText(cleanedResponse, {
+          await bot.editMessageText(fullResponse, {
             chat_id: chatId,
             message_id: messageId,
             parse_mode: 'Markdown'
           });
+          lastSentResponse = fullResponse;
         } catch (error) {
-          console.error('Error editing message:', error);
-          await bot.editMessageText(cleanedResponse, {
-            chat_id: chatId,
-            message_id: messageId
-          });
+          if (!error.response || error.response.description !== 'Bad Request: message is not modified') {
+            console.error('Error editing message:', error);
+          }
         }
       }
     }
-  
-    if (messageSent) {
-      const finalCleanedResponse = cleanMarkdown(fullResponse);
-      await bot.editMessageText(finalCleanedResponse, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: 'Markdown'
-      });
+
+    if (messageSent && fullResponse !== lastSentResponse) {
+      try {
+        await bot.editMessageText(fullResponse, {
+          chat_id: chatId,
+          message_id: messageId,
+          parse_mode: 'Markdown'
+        });
+      } catch (error) {
+        if (!error.response || error.response.description !== 'Bad Request: message is not modified') {
+          console.error('Error in final message edit:', error);
+        }
+      }
     }
-  
+
     await addToConversationHistory(userId, msg.text, fullResponse);
   } catch (error) {
     console.error('Error in stream processing:', error);
-    await bot.sendMessage(chatId, translate('error_message', userLang));
+    await bot.sendMessage(chatId, translate('error_message', userLang), {parse_mode: 'Markdown'});
   }
 }
 
