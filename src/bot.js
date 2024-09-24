@@ -27,6 +27,10 @@ const { generateImage, VALID_SIZES } = require('./generateImage');
 const { handleImageUpload } = require('./uploadHandler');
 const { getUserLanguage, setUserLanguage, translate, supportedLanguages, getLocalizedCommands } = require('./localization');
 
+function escapeMarkdown(text) {
+  return text.replace(/[_*[\]()~`>#+-=|{}.!]/g, '\\$&');
+}
+
 let currentModel = OPENAI_API_KEY ? DEFAULT_MODEL : null;
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, {
@@ -248,7 +252,8 @@ async function handleStreamMessage(msg) {
   if (GROQ_MODELS.includes(currentModel) && GROQ_API_KEY) {
     try {
       const response = await generateGroqResponse(msg.text, conversationHistory, currentModel);
-      await bot.sendMessage(chatId, response, {parse_mode: 'Markdown'});
+      const formattedResponse = escapeMarkdown(response);
+      await bot.sendMessage(chatId, formattedResponse, {parse_mode: 'MarkdownV2'});
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Groq processing:', error);
@@ -256,11 +261,12 @@ async function handleStreamMessage(msg) {
     }
     return;
   }
-
+  
   if (GOOGLE_MODELS.includes(currentModel) && GEMINI_API_KEY) {
     try {
       const response = await generateGeminiResponse(msg.text, conversationHistory, currentModel);
-      await bot.sendMessage(chatId, response, {parse_mode: 'Markdown'});
+      const formattedResponse = escapeMarkdown(response);
+      await bot.sendMessage(chatId, formattedResponse, {parse_mode: 'MarkdownV2'});
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Gemini processing:', error);
