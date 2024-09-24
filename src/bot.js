@@ -284,6 +284,7 @@ async function handleStreamMessage(msg) {
   let fullResponse = '';
   let messageSent = false;
   let messageId;
+  let lastUpdateLength = 0;
   
   try {
     for await (const chunk of stream) {
@@ -293,13 +294,15 @@ async function handleStreamMessage(msg) {
         const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
         messageId = sentMsg.message_id;
         messageSent = true;
-      } else if (messageSent && fullResponse.length % 100 === 0) {
+        lastUpdateLength = fullResponse.length;
+      } else if (messageSent && fullResponse.length % Math.max(20, Math.floor((fullResponse.length - lastUpdateLength) / 10)) === 0) {
         try {
           await bot.editMessageText(fullResponse, {
             chat_id: chatId,
             message_id: messageId,
             parse_mode: 'Markdown'
           });
+          lastUpdateLength = fullResponse.length;
         } catch (error) {
           if (!error.response || error.response.description !== 'Bad Request: message is not modified') {
             console.error('Error editing message:', error);
