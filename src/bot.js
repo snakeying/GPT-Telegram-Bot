@@ -261,10 +261,21 @@ async function handleStreamMessage(msg) {
   await bot.sendChatAction(chatId, 'typing');
   const conversationHistory = await getConversationHistory(userId);
 
+  const MESSAGE_LENGTH_THRESHOLD = 4000;
+
+  async function sendLongMessage(text) {
+    let remainingText = text;
+    while (remainingText.length > 0) {
+      const chunk = remainingText.slice(0, MESSAGE_LENGTH_THRESHOLD);
+      await sendMessageWithFallback(chatId, chunk);
+      remainingText = remainingText.slice(MESSAGE_LENGTH_THRESHOLD);
+    }
+  }
+
   if (GROQ_MODELS.includes(currentModel) && GROQ_API_KEY) {
     try {
       const response = await generateGroqResponse(msg.text, conversationHistory, currentModel);
-      await sendMessageWithFallback(chatId, response);
+      await sendLongMessage(response);
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Groq processing:', error);
@@ -276,7 +287,7 @@ async function handleStreamMessage(msg) {
   if (GOOGLE_MODELS.includes(currentModel) && GEMINI_API_KEY) {
     try {
       const response = await generateGeminiResponse(msg.text, conversationHistory, currentModel);
-      await sendMessageWithFallback(chatId, response);
+      await sendLongMessage(response);
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Gemini processing:', error);
@@ -305,13 +316,27 @@ async function handleStreamMessage(msg) {
   try {
     for await (const chunk of stream) {
       fullResponse += chunk;
-  
-      if (fullResponse.length > 0 && !messageSent) {
+
+      if (fullResponse.length > MESSAGE_LENGTH_THRESHOLD) {
+        if (messageSent) {
+          // 发送新消息并重置
+          await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
+        } else {
+          // 首次发送消息
+          const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
+          messageId = sentMsg.message_id;
+          messageSent = true;
+        }
+        fullResponse = '';
+        lastUpdateLength = 0;
+      } else if (fullResponse.length > 0 && !messageSent) {
+        // 首次发送消息（短于阈值）
         const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
         messageId = sentMsg.message_id;
         messageSent = true;
         lastUpdateLength = fullResponse.length;
       } else if (messageSent && fullResponse.length % Math.max(20, Math.floor((fullResponse.length - lastUpdateLength) / 10)) === 0) {
+        // 更新现有消息
         try {
           await bot.editMessageText(fullResponse, {
             chat_id: chatId,
@@ -326,57 +351,24 @@ async function handleStreamMessage(msg) {
         }
       }
     }
-  
-    if (messageSent) {
-      await bot.editMessageText(fullResponse, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: 'Markdown'
-      });
+
+    // 发送剩余的内容（如果有）
+    if (fullResponse.length > 0) {
+      if (messageSent) {
+        await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
+      } else {
+        await bot.editMessageText(fullResponse, {
+          chat_id: chatId,
+          message_id: messageId,
+          parse_mode: 'Markdown'
+        });
+      }
     }
   
     await addToConversationHistory(userId, msg.text, fullResponse);
   } catch (error) {
     console.error('Error in stream processing:', error);
     await bot.sendMessage(chatId, translate('error_message', userLang), {parse_mode: 'Markdown'});
-  }
-}
-
-async function handleImageAnalysis(msg) {
-  const chatId = msg.chat.id;
-  const userId = msg.from.id;
-  const userLang = await getUserLanguage(userId);
-
-  if (!OPENAI_API_KEY) {
-    await bot.sendMessage(chatId, translate('no_api_key', userLang));
-    return;
-  }
-
-  // Check if a photo is attached
-  const photo = msg.photo && msg.photo[msg.photo.length - 1];
-  if (!photo) {
-    await bot.sendMessage(chatId, translate('no_image', userLang));
-    return;
-  }
-
-  // Get the prompt from the caption or wait for it
-  let prompt = msg.caption;
-  if (!prompt) {
-    await bot.sendMessage(chatId, translate('provide_image_description', userLang));
-    // Wait for the next message to be the prompt
-    const promptMsg = await new Promise(resolve => bot.once('message', resolve));
-    prompt = promptMsg.text;
-  }
-
-  await bot.sendMessage(chatId, translate('processing_image', userLang));
-
-  try {
-    const fileInfo = await bot.getFile(photo.file_id);
-    const result = await handleImageUpload(fileInfo, prompt, currentModel);
-    await bot.sendMessage(chatId, result, { parse_mode: 'Markdown' });
-  } catch (error) {
-    console.error('Error in image analysis:', error);
-    await bot.sendMessage(chatId, translate('error_message', userLang));
   }
 }
 
