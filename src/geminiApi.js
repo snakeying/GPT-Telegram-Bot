@@ -22,8 +22,7 @@ async function generateGeminiResponse(prompt, conversationHistory, model) {
 
     const result = await chat.sendMessage(prompt);
     const response = result.response;
-    console.log('Raw Gemini response:', JSON.stringify(response));
-    return response.text(); 
+    return response.text();
   } catch (error) {
     console.error('Error in generateGeminiResponse:', error);
     throw new Error(`Failed to generate Gemini response: ${error.message}`);
