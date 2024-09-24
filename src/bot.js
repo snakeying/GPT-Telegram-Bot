@@ -40,6 +40,31 @@ const redis = new Redis({
   token: UPSTASH_REDIS_REST_TOKEN,
 });
 
+const { Readable } = require('stream');
+
+const modelHandlers = {
+  groq: {
+    handler: generateGroqResponse,
+    isStream: false
+  },
+  gemini: {
+    handler: generateGeminiResponse,
+    isStream: false
+  },
+  openai: {
+    handler: generateStreamResponse,
+    isStream: true
+  },
+  claude: {
+    handler: generateClaudeResponse,
+    isStream: true
+  },
+  azureOpenAI: {
+    handler: generateAzureOpenAIResponse,
+    isStream: true
+  }
+};
+
 function getMessageFromUpdate(update) {
   if (update.callback_query) {
     return update.callback_query.message;
@@ -261,37 +286,17 @@ async function handleStreamMessage(msg) {
   await bot.sendChatAction(chatId, 'typing');
   const conversationHistory = await getConversationHistory(userId);
 
+  let handlerInfo;
   if (GROQ_MODELS.includes(currentModel) && GROQ_API_KEY) {
-    try {
-      const response = await generateGroqResponse(msg.text, conversationHistory, currentModel);
-      await sendMessageWithFallback(chatId, response);
-      await addToConversationHistory(userId, msg.text, response);
-    } catch (error) {
-      console.error('Error in Groq processing:', error);
-      await sendMessageWithFallback(chatId, translate('error_message', userLang));
-    }
-    return;
-  }
-  
-  if (GOOGLE_MODELS.includes(currentModel) && GEMINI_API_KEY) {
-    try {
-      const response = await generateGeminiResponse(msg.text, conversationHistory, currentModel);
-      await sendMessageWithFallback(chatId, response);
-      await addToConversationHistory(userId, msg.text, response);
-    } catch (error) {
-      console.error('Error in Gemini processing:', error);
-      await sendMessageWithFallback(chatId, translate('error_message', userLang));
-    }
-    return;
-  }
-
-  let stream;
-  if (OPENAI_API_KEY && OPENAI_MODELS.includes(currentModel)) {
-    stream = generateStreamResponse(msg.text, conversationHistory, currentModel);
-  } else if (CLAUDE_API_KEY && CLAUDE_MODELS.includes(currentModel)) {
-    stream = generateClaudeResponse(msg.text, conversationHistory, currentModel);
-  } else if (AZURE_OPENAI_API_KEY && AZURE_OPENAI_MODELS.includes(currentModel)) {
-    stream = generateAzureOpenAIResponse(msg.text, conversationHistory, currentModel);
+    handlerInfo = modelHandlers.groq;
+  } else if (GOOGLE_MODELS.includes(currentModel) && GEMINI_API_KEY) {
+    handlerInfo = modelHandlers.gemini;
+  } else if (OPENAI_MODELS.includes(currentModel) && OPENAI_API_KEY) {
+    handlerInfo = modelHandlers.openai;
+  } else if (CLAUDE_MODELS.includes(currentModel) && CLAUDE_API_KEY) {
+    handlerInfo = modelHandlers.claude;
+  } else if (AZURE_OPENAI_MODELS.includes(currentModel) && AZURE_OPENAI_API_KEY) {
+    handlerInfo = modelHandlers.azureOpenAI;
   } else {
     await bot.sendMessage(chatId, translate('no_api_key', userLang));
     return;
@@ -303,30 +308,37 @@ async function handleStreamMessage(msg) {
   let lastUpdateLength = 0;
   
   try {
-    for await (const chunk of stream) {
-      fullResponse += chunk;
-  
-      if (fullResponse.length > 0 && !messageSent) {
-        const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
-        messageId = sentMsg.message_id;
-        messageSent = true;
-        lastUpdateLength = fullResponse.length;
-      } else if (messageSent && fullResponse.length % Math.max(20, Math.floor((fullResponse.length - lastUpdateLength) / 10)) === 0) {
-        try {
-          await bot.editMessageText(fullResponse, {
-            chat_id: chatId,
-            message_id: messageId,
-            parse_mode: 'Markdown'
-          });
-          lastUpdateLength = fullResponse.length;
-        } catch (error) {
-          if (!error.response || error.response.description !== 'Bad Request: message is not modified') {
-            console.error('Error editing message:', error);
+    const response = await handlerInfo.handler(msg.text, conversationHistory, currentModel);
+
+    if (handlerInfo.isStream) {
+      if (handlerInfo.handler === generateStreamResponse) {
+        // OpenAI's streaming response
+        for await (const chunk of response) {
+          fullResponse += chunk;
+          await updateMessage();
+        }
+      } else {
+        // Claude and Azure OpenAI streaming responses
+        const stream = Readable.from(response);
+        for await (const chunk of stream) {
+          const lines = chunk.toString().split('\n').filter(line => line.trim() !== '');
+          for (const line of lines) {
+            if (line.includes('content')) {
+              const match = line.match(/"content":"([^"]*)"/);
+              if (match) {
+                fullResponse += match[1];
+                await updateMessage();
+              }
+            }
           }
         }
       }
+    } else {
+      // Non-streaming responses (Groq and Gemini)
+      fullResponse = response;
+      await updateMessage();
     }
-  
+
     if (messageSent) {
       await bot.editMessageText(fullResponse, {
         chat_id: chatId,
@@ -337,8 +349,30 @@ async function handleStreamMessage(msg) {
   
     await addToConversationHistory(userId, msg.text, fullResponse);
   } catch (error) {
-    console.error('Error in stream processing:', error);
+    console.error('Error in message processing:', error);
     await bot.sendMessage(chatId, translate('error_message', userLang), {parse_mode: 'Markdown'});
+  }
+
+  async function updateMessage() {
+    if (fullResponse.length > 0 && !messageSent) {
+      const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
+      messageId = sentMsg.message_id;
+      messageSent = true;
+      lastUpdateLength = fullResponse.length;
+    } else if (messageSent && fullResponse.length % Math.max(20, Math.floor((fullResponse.length - lastUpdateLength) / 10)) === 0) {
+      try {
+        await bot.editMessageText(fullResponse, {
+          chat_id: chatId,
+          message_id: messageId,
+          parse_mode: 'Markdown'
+        });
+        lastUpdateLength = fullResponse.length;
+      } catch (error) {
+        if (!error.response || error.response.description !== 'Bad Request: message is not modified') {
+          console.error('Error editing message:', error);
+        }
+      }
+    }
   }
 }
 
