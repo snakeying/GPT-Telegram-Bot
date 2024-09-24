@@ -87,7 +87,7 @@ async function handleHistory(msg) {
   const userId = msg.from.id;
   const userLang = await getUserLanguage(userId);
   try {
-    const summarizedHistory = await getSummarizedConversationHistory(userId);
+    const summarizedHistory = await getSummarizedConversationHistory(userId, currentModel); // Pass currentModel to getSummarizedConversationHistory
     if (!summarizedHistory) {
       await bot.sendMessage(chatId, translate('no_history', userLang), {parse_mode: 'Markdown'});
       return;

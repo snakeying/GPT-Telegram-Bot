@@ -58,20 +58,20 @@ async function clearConversationHistory(userId) {
   }
 }
 
-async function getSummarizedConversationHistory(userId) {
+async function getSummarizedConversationHistory(userId, currentModel) {
   try {
     const history = await getConversationHistory(userId);
     if (history.length === 0) {
       return null;
     }
-    
+
     // Prepare the prompt for summarization
     const historyText = history.map(m => `${m.role}: ${m.content}`).join('\n\n');
     const summarizationPrompt = `Please summarize the following conversation history concisely:\n\n${historyText}\n\nSummary:`;
-    
+
     // Generate summary using the current model
-    const summary = await generateResponse(summarizationPrompt, []);
-    
+    const summary = await generateResponse(summarizationPrompt, [], currentModel);
+
     return summary.trim();
   } catch (error) {
     console.error('Error summarizing conversation history:', error);
