@@ -284,24 +284,22 @@ async function handleStreamMessage(msg) {
   let fullResponse = '';
   let messageSent = false;
   let messageId;
-  let lastSentResponse = '';
-
+  
   try {
     for await (const chunk of stream) {
       fullResponse += chunk;
-
+  
       if (fullResponse.length > 0 && !messageSent) {
         const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
         messageId = sentMsg.message_id;
         messageSent = true;
-      } else if (messageSent && fullResponse !== lastSentResponse) {
+      } else if (messageSent && fullResponse.length % 100 === 0) {
         try {
           await bot.editMessageText(fullResponse, {
             chat_id: chatId,
             message_id: messageId,
             parse_mode: 'Markdown'
           });
-          lastSentResponse = fullResponse;
         } catch (error) {
           if (!error.response || error.response.description !== 'Bad Request: message is not modified') {
             console.error('Error editing message:', error);
@@ -309,21 +307,15 @@ async function handleStreamMessage(msg) {
         }
       }
     }
-
-    if (messageSent && fullResponse !== lastSentResponse) {
-      try {
-        await bot.editMessageText(fullResponse, {
-          chat_id: chatId,
-          message_id: messageId,
-          parse_mode: 'Markdown'
-        });
-      } catch (error) {
-        if (!error.response || error.response.description !== 'Bad Request: message is not modified') {
-          console.error('Error in final message edit:', error);
-        }
-      }
+  
+    if (messageSent) {
+      await bot.editMessageText(fullResponse, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: 'Markdown'
+      });
     }
-
+  
     await addToConversationHistory(userId, msg.text, fullResponse);
   } catch (error) {
     console.error('Error in stream processing:', error);
@@ -458,5 +450,5 @@ module.exports = {
   handleStart, 
   getMessageFromUpdate, 
   handleCallbackQuery,
-  updateBotCommands  // 导出新函数
+  updateBotCommands
 };
