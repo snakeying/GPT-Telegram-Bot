@@ -28,7 +28,26 @@ const { handleImageUpload } = require('./uploadHandler');
 const { getUserLanguage, setUserLanguage, translate, supportedLanguages, getLocalizedCommands } = require('./localization');
 
 function escapeMarkdown(text) {
-  return text.replace(/[_*[\]()~`>#+-=|{}.!]/g, '\\$&');
+  const preservedTokens = [
+    {token: '```', replacement: '\n```\n'},
+    {token: '`', replacement: '`'}, 
+    {token: '**', replacement: '*'}, 
+    {token: '__', replacement: '_'},
+    {token: '- ', replacement: '\\- '}, 
+    {token: '\n- ', replacement: '\n\\- '}, 
+  ];
+
+  const escapeChars = ['\\', '/', '[', ']', '(', ')', '~', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+  
+  preservedTokens.forEach(({token, replacement}) => {
+    text = text.split(token).join(replacement);
+  });
+  
+  escapeChars.forEach(char => {
+    text = text.replace(new RegExp('\\' + char, 'g'), '\\' + char);
+  });
+  
+  return text;
 }
 
 let currentModel = OPENAI_API_KEY ? DEFAULT_MODEL : null;
@@ -257,7 +276,7 @@ async function handleStreamMessage(msg) {
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Groq processing:', error);
-      await bot.sendMessage(chatId, translate('error_message', userLang), {parse_mode: 'Markdown'});
+      await bot.sendMessage(chatId, translate('error_message', userLang));
     }
     return;
   }
@@ -270,7 +289,7 @@ async function handleStreamMessage(msg) {
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Gemini processing:', error);
-      await bot.sendMessage(chatId, translate('error_message', userLang), {parse_mode: 'Markdown'});
+      await bot.sendMessage(chatId, translate('error_message', userLang));
     }
     return;
   }
