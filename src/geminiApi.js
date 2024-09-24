@@ -29,3 +29,5 @@ async function generateGeminiResponse(prompt, conversationHistory, model) {
     throw new Error(`Failed to generate Gemini response: ${error.message}`);
   }
 }
+
+module.exports = { generateGeminiResponse };
