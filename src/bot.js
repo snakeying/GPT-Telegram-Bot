@@ -317,30 +317,26 @@ async function handleStreamMessage(msg) {
     for await (const chunk of stream) {
       fullResponse += chunk;
 
-      // 长消息处理逻辑
       if (fullResponse.length > MESSAGE_LENGTH_THRESHOLD) {
-        if (!messageSent) {
+        if (messageSent) {
+          // 发送新消息并重置
+          await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
+        } else {
           // 首次发送消息
           const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
           messageId = sentMsg.message_id;
           messageSent = true;
-        } else {
-          // 已发送消息，发送新的分段消息
-          await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
         }
-        // 重置 fullResponse，准备处理后续内容
         fullResponse = '';
         lastUpdateLength = 0;
-      }
-      // 短消息处理逻辑
-      else if (!messageSent) {
-        // 如果尚未发送消息，且消息长度小于阈值，直接发送
+      } else if (fullResponse.length > 0 && !messageSent) {
+        // 首次发送消息（短于阈值）
         const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
         messageId = sentMsg.message_id;
         messageSent = true;
         lastUpdateLength = fullResponse.length;
-      } else if (messageSent) {
-        // 更新现有消息逻辑
+      } else if (messageSent && fullResponse.length % Math.max(20, Math.floor((fullResponse.length - lastUpdateLength) / 10)) === 0) {
+        // 更新现有消息
         try {
           await bot.editMessageText(fullResponse, {
             chat_id: chatId,
@@ -349,7 +345,6 @@ async function handleStreamMessage(msg) {
           });
           lastUpdateLength = fullResponse.length;
         } catch (error) {
-          // 过滤特定的“message is not modified”错误
           if (!error.response || error.response.description !== 'Bad Request: message is not modified') {
             console.error('Error editing message:', error);
           }
@@ -359,11 +354,11 @@ async function handleStreamMessage(msg) {
 
     // 发送剩余的内容（如果有）
     if (fullResponse.length > 0) {
-      if (messageSent) {
-        // 如果已经发送了消息，直接追加发送剩余内容
-        await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
+      if (!messageSent) {  // 只在没有发送过时发送消息
+        const sentMsg = await bot.sendMessage(chatId, fullResponse, {parse_mode: 'Markdown'});
+        messageId = sentMsg.message_id;
+        messageSent = true;
       } else {
-        // 如果之前没有发送消息，编辑最后的消息
         await bot.editMessageText(fullResponse, {
           chat_id: chatId,
           message_id: messageId,
