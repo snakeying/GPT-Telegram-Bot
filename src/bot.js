@@ -335,7 +335,7 @@ async function handleStreamMessage(msg) {
         messageId = sentMsg.message_id;
         messageSent = true;
         lastUpdateLength = fullResponse.length;
-      } else if (messageSent && fullResponse.length % Math.max(100, Math.floor((fullResponse.length - lastUpdateLength) / 10)) === 0) {
+      } else if (messageSent && fullResponse.length % Math.max(200, Math.floor((fullResponse.length - lastUpdateLength) / 10)) === 0) {
         // 更新现有消息
         try {
           await bot.editMessageText(fullResponse, {
