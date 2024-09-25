@@ -339,6 +339,21 @@ async function handleStreamMessage(msg) {
         messageId = sentMsg.message_id;
         messageSent = true;
         lastUpdateLength = fullResponse.length;
+      } else if (messageSent) {
+        // 更新现有消息逻辑
+        try {
+          await bot.editMessageText(fullResponse, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown'
+          });
+          lastUpdateLength = fullResponse.length;
+        } catch (error) {
+          // 过滤特定的“message is not modified”错误
+          if (!error.response || error.response.description !== 'Bad Request: message is not modified') {
+            console.error('Error editing message:', error);
+          }
+        }
       }
     }
 
