@@ -335,15 +335,15 @@ async function handleStreamMessage(msg) {
         messageId = sentMsg.message_id;
         messageSent = true;
         lastUpdateLength = fullResponse.length;
-      } else if (messageSent && (fullResponse.length - lastUpdateLength >= 200)) { 
-        // 更新现有消息，每新增200个字符时更新一次
+      } else if (messageSent && fullResponse.length % Math.max(20, Math.floor((fullResponse.length - lastUpdateLength) / 10)) === 0) {
+        // 更新现有消息
         try {
           await bot.editMessageText(fullResponse, {
             chat_id: chatId,
             message_id: messageId,
             parse_mode: 'Markdown'
           });
-          lastUpdateLength = fullResponse.length; // 更新最后修改的长度
+          lastUpdateLength = fullResponse.length;
         } catch (error) {
           if (!error.response || error.response.description !== 'Bad Request: message is not modified') {
             console.error('Error editing message:', error);
