@@ -50,16 +50,20 @@ function getMessageFromUpdate(update) {
 async function sendMessageWithFallback(chatId, text, parseMode = 'Markdown') {
   try {
     await bot.sendMessage(chatId, text, { parse_mode: parseMode });
+    return true; // 成功发送
   } catch (error) {
     console.error('Error sending message with Markdown:', error);
-    try {
-      // 移除 Markdown 语法
-      const plainText = text.replace(/[*_`\[\]()~>#+=|{}.!-]/g, '');
-      await bot.sendMessage(chatId, plainText);
-    } catch (secondError) {
-      console.error('Error sending plain text message:', secondError);
-      throw new Error('Failed to send message in any format');
+    if (parseMode === 'Markdown') {
+      try {
+        // 移除 Markdown 语法
+        const plainText = text.replace(/[*_`\[\]()~>#+=|{}.!-]/g, '');
+        await bot.sendMessage(chatId, plainText);
+        return true; // 成功发送纯文本
+      } catch (secondError) {
+        console.error('Error sending plain text message:', secondError);
+      }
     }
+    return false; // 发送失败
   }
 }
 
@@ -263,11 +267,11 @@ async function handleStreamMessage(msg) {
 
   const MESSAGE_LENGTH_THRESHOLD = 4000;
 
-  async function sendLongMessage(text) {
+  async function sendLongMessage(text, parseMode = 'Markdown') {
     let remainingText = text;
     while (remainingText.length > 0) {
       const chunk = remainingText.slice(0, MESSAGE_LENGTH_THRESHOLD);
-      await sendMessageWithFallback(chatId, chunk);
+      await sendMessageWithFallback(chatId, chunk, parseMode);
       remainingText = remainingText.slice(MESSAGE_LENGTH_THRESHOLD);
     }
   }
@@ -275,7 +279,13 @@ async function handleStreamMessage(msg) {
   if (GROQ_MODELS.includes(currentModel) && GROQ_API_KEY) {
     try {
       const response = await generateGroqResponse(msg.text, conversationHistory, currentModel);
-      await sendLongMessage(response);
+      console.log('Response from Groq API:', response);
+      try {
+        await sendLongMessage(response, 'Markdown');
+      } catch (error) {
+        console.error('Error sending Markdown, falling back to plain text:', error);
+        await sendLongMessage(response, '');
+      }
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Groq processing:', error);
@@ -287,7 +297,13 @@ async function handleStreamMessage(msg) {
   if (GOOGLE_MODELS.includes(currentModel) && GEMINI_API_KEY) {
     try {
       const response = await generateGeminiResponse(msg.text, conversationHistory, currentModel);
-      await sendLongMessage(response);
+      console.log('Response from Gemini API:', response);
+      try {
+        await sendLongMessage(response, 'Markdown');
+      } catch (error) {
+        console.error('Error sending Markdown, falling back to plain text:', error);
+        await sendLongMessage(response, '');
+      }
       await addToConversationHistory(userId, msg.text, response);
     } catch (error) {
       console.error('Error in Gemini processing:', error);
