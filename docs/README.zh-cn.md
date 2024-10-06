@@ -1,6 +1,6 @@
 # GPT-Telegram-Bot：多功能 AI 助手 🤖💬
 
-[English](./README.en.md) | [简体中文](./README.zh-cn.md) | [繁體中文](./README.zh-hant.md) | [日本語](./README.ja.md) | [Español](./README.es.md) | [Français](./README.fr.md) | [Русский](./README.ru.md) | [Deutsch](./README.de.md)
+[English](./README.md) | [简体中文](./README.zh-cn.md) | [繁體中文](./README.zh-hant.md) | [日本語](./README.ja.md) | [Español](./README.es.md) | [Français](./README.fr.md) | [Русский](./README.ru.md) | [Deutsch](./README.de.md)
 
 GPT-Telegram-Bot 是一个功能强大的 Telegram 机器人，集成了多种 AI 模型，提供智能对话、图像生成和分析等功能。
 
